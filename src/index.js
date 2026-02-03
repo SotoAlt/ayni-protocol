@@ -34,7 +34,10 @@ export {
   toPNG,
   savePNG,
   toSVG,
-  saveSVG
+  saveSVG,
+  toDataURL,
+  renderGrid,
+  renderWithLabel
 } from './core/index.js';
 
 // Re-export protocol components

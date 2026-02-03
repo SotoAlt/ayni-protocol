@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Ayni Protocol - VLM Test Page</title>
+  <style>
+    body { font-family: system-ui; max-width: 800px; margin: 0 auto; padding: 20px; }
+    .glyph { display: inline-block; margin: 10px; text-align: center; }
+    .glyph img { border: 1px solid #ccc; }
+    .glyph p { margin: 5px 0; font-size: 14px; }
+    h1 { border-bottom: 2px solid #333; padding-bottom: 10px; }
+    .instructions { background: #f5f5f5; padding: 15px; margin: 20px 0; border-radius: 5px; }
+  </style>
+</head>
+<body>
+  <h1>Ayni Protocol - VLM Validation Test</h1>
+
+  <div class="instructions">
+    <h3>Instructions:</h3>
+    <ol>
+      <li>Take a screenshot or save the images below</li>
+      <li>Submit to GPT-4V, Claude Vision, or Gemini</li>
+      <li>Use the prompts from vlm-test-prompts.md</li>
+      <li>Record accuracy and confidence</li>
+    </ol>
+  </div>
+
+  <h2>Foundation Glyphs (128x128)</h2>
+  <div>
+    
+    <div class="glyph">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABmJLR0QA/wD/AP+gvaeTAAAB7UlEQVR4nO3dS46rMBQAUXjq/W85PX7uAUIBLFznzPojlEHp2iZE2bdt+2xk/Zv9AphLAHECiPsZf/H52BKsbN/3/342AeIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxAoj78zwAzxrfn3/6eQwTIE4AcQKIy+8B7l6Dx+t/+/9Xvz4TIE4AcQKIy+0BjtbY2efyp5kAcQKIE0Dc6/cAR2v22XP409c/6+o9igkQJ4A4AcS9fg9wtCZ/u2bfff3ZTIA4AcQJIO71e4DRt2v22b+/nQkQJ4A4AcQttwcYnT2nr77mj0yAOAHECSBu+T3AqHbOP2ICxAkgTgBxuT3A3e5+PsBnA7mUAOIEECeAOAHECSBOAHHuA9zs6Nw++70IEyBOAHECiLMHmGz28wcmQJwA4gQQJ4A4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxuc8F1L8fYGQCxAkgTgBxAogTQJwA4gQQt/x9gLPn+tp9ARMgTgBxAogTQJwA4gQQJ4C45e4DXH1uX/2+gAkQJ4A4AcQttwe4e01++5o/MgHiBBAngDgBxAkgTgBxAogTQJwA4gQQJ4A4AcQJIE4AcQKI27dtW+sNbk4xAeIEECeAuF8tTmwO2XNoiAAAAABJRU5ErkJggg==" alt="Q01">
+      <p><strong>Q01</strong></p>
+      <p>Query Database</p>
+    </div>
+    
+    <div class="glyph">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABmJLR0QA/wD/AP+gvaeTAAAB8klEQVR4nO3cwW7iMBRA0WTU//9lup50EVlBGPvcs2sRIour59dAOY/jeB1h/Zt9AZmrAHAFgPu5/uL1aiXY2Xme//3cBMAVAK4AcAWAKwBcAeAKAFcAuALAFQCuAHAFgCsAXAHgCgBXALgCwBUArgBwfz4TqLl+Rm61z0Q+vf4mAK4AcAWA43aA65l59/i37QTvvr4mAK4AcAWA234HuDvzR58/eubOfv6dJgCuAHAFgNt+B7iemaM7wdMz9+71Z99naALgCgBXALjtd4Crbz+TP309TQBcAeAKAMftALN92w7SBMAVAK4AcO0Ak82+79AEwBUArgBwBYArAFwB4AoAVwC4AsAVAK4AcNx7Aat/P8C7NQFwBYArANz2O8Ddmf708dU1AXAFgCsA3HY7wLvP7N13giYArgBwBYBbfgf49Jm8207QBMAVAK4AcMvvALPP3Nmv/1QTAFcAuALAFQCuAHAFgCsAXAHgCgBXALgCwC3/XsAo/f8ArpoAuALAFQCuAHAFgCsAXAHgtr8PMPp3vXZfoAmAKwBcAeAKAFcAuALAFQBuu/sAfUfQmCYArgBwBYDbbgf49HcEra4JgCsAXAHgCgBXALgCwBUArgBwBYArAFwB4AoAVwC4AsAVAO48jmOvN7gzpAmAKwBcAeB+Aa12ewGz8dXlAAAAAElFTkSuQmCC" alt="R01">
+      <p><strong>R01</strong></p>
+      <p>Response Success</p>
+    </div>
+    
+    <div class="glyph">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABmJLR0QA/wD/AP+gvaeTAAAB2ElEQVR4nO3dQU7DMBRAQQdx/yuHNWYRRWmU4DezAxTo4unbuGm7jTH2QdbX0w+AZwkgTgBx3/M39t2WYGXbtv362gSIE0CcAOIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxAogTQJwA4v7cE1gz3yP36Xsir/7+ux+fCRAngDgBxC23BzhaM+efX73+aE0+e/3da/7MBIgTQJwA4rYxvT/Aaq8NPFrzz3rbOcHVv2cCxAkgTgBxy50DvJ1zAF5FAHECiFt+D3D2uYCj68+6+7mDq0yAOAHECSBu+T3A066u2c4BuJUA4gQQl9sDPH32/jYmQJwA4gQQJ4A4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxAogTQJwA4gQQJ4A4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHG59wl822f2PM0EiBNAnADiBBAngDgBxAkgbvlzgLd/bt/TTIA4AcQJIE4AcQKIE0CcAOKWOwf49P/tq58LmABxAogTQNxye4C71+T/vubPTIA4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHECiBNAnADitjHGWk9wc4oJECeAOAHE/QAVAmn23D4aHwAAAABJRU5ErkJggg==" alt="E01">
+      <p><strong>E01</strong></p>
+      <p>Error</p>
+    </div>
+    
+    <div class="glyph">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABmJLR0QA/wD/AP+gvaeTAAAB/ElEQVR4nO3dwU6DQBRAUTD+/y/XdccFmQClcO7ZqaFxcfPmlba6LsvyWsL6ufoXyLUKAFcAuN/xG69XK8GTrev69nUTAFcAuALAFQCuAHAFgCsAXAHgCgBXALgCwBUArgBwBYArAFwB4AoAVwC4AsD9e09g3o3voTv6PZNnP/6WJgCuAHAFgGsHGIxn8tbPZ8/sres/vRM0AXAFgCsAHL8DbJ35s9fvPdM/vRM0AXAFgCsAHL8DbJ25s9fPPn73AXKpAsAVAI7fAUZnn9lXn/mjJgCuAHAFgGsHmHT0mX3132VsAuAKAFcAuHaASVef2UdrAuAKAFcAuHaAwdX35j+tCYArAFwB4LgdYO/nAJ6mCYArAFwB4B63A2yd8VvP67UdoQmAKwBcAeBuvwNo9+6P1gTAFQCuAHC33wE68/dpAuAKAFcAuNvvAHvp9xGaALgCwBUArgBwBYArAFwB4AoAVwC4AsAVAI5/LWCkvTbQBMAVAK4AcNwOMHvGP30naALgCgBXADhuB5j1bf/j52hNAFwB4AoA1w4w6Wk7QRMAVwC4AsA9fgc4+4y+25k/agLgCgBXALgCwBUArgBwBYB7/H2Auz9PP1sTAFcAuALAFQCuAHAFgCsAXAHgCgBXALgCwBUArgBwBYArANy6LEsvmMOaALgCwBUA7g9eOHUNaKhwsAAAAABJRU5ErkJggg==" alt="A01">
+      <p><strong>A01</strong></p>
+      <p>Execute Action</p>
+    </div>
+    
+  </div>
+
+  <h2>Test: Can you identify this glyph?</h2>
+  <div class="glyph">
+    <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAABmJLR0QA/wD/AP+gvaeTAAAB7UlEQVR4nO3dS46rMBQAUXjq/W85PX7uAUIBLFznzPojlEHp2iZE2bdt+2xk/Zv9AphLAHECiPsZf/H52BKsbN/3/342AeIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxAoj78zwAzxrfn3/6eQwTIE4AcQKIy+8B7l6Dx+t/+/9Xvz4TIE4AcQKIy+0BjtbY2efyp5kAcQKIE0Dc6/cAR2v22XP409c/6+o9igkQJ4A4AcS9fg9wtCZ/u2bfff3ZTIA4AcQJIO71e4DRt2v22b+/nQkQJ4A4AcQttwcYnT2nr77mj0yAOAHECSBu+T3AqHbOP2ICxAkgTgBxuT3A3e5+PsBnA7mUAOIEECeAOAHECSBOAHHuA9zs6Nw++70IEyBOAHECiLMHmGz28wcmQJwA4gQQJ4A4AcQJIE4AcQKIE0CcAOIEECeAOAHECSBOAHECiBNAnADiBBAngDgBxAkgTgBxuc8F1L8fYGQCxAkgTgBxAogTQJwA4gQQt/x9gLPn+tp9ARMgTgBxAogTQJwA4gQQJ4C45e4DXH1uX/2+gAkQJ4A4AcQttwe4e01++5o/MgHiBBAngDgBxAkgTgBxAogTQJwA4gQQJ4A4AcQJIE4AcQKI27dtW+sNbk4xAeIEECeAuF8tTmwO2XNoiAAAAABJRU5ErkJggg==" alt="Unknown">
+    <p>What glyph is this?</p>
+  </div>
+
+  <h2>ASCII Reference</h2>
+  <pre>Q01: Query Database
+
+████████████████████████████████
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░█░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░█████░░░░█
+█░░░░░░░░░░░░░░███░░░░█████░░░░█
+█░░░░░░░░░░░█░█████░████████░░░█
+█░░░░░░░░░░░░█░███░█░███████░░░█
+█░░░░░░░░░░░░░█░█░█░░███████░░░█
+█░░░░░░░░░░░░░░███░░░███████░░░█
+█░░░░░░░░░░░░░░░█░░░░███████░░░█
+█░░░░░░░░░░░░░░░█░░░░░█████░░░░█
+█░░░░░░░░░░░░░░░█░░░░░█████░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░█░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░█░░░░░█░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+████████████████████████████████
+
+R01: Response Success
+
+████████████████████████████████
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░█░░█
+█░░░░░░░░░░░░░░███░░░░░░░░░█░░░█
+█░░░░░░░░░░░░░█████░░░█░░░█░░░░█
+█░░░░░░░░░░░░░░███░░░░░█░░█░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░█░█░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░█░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░███░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░█░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░█░░█░░█░░░░░░░░░░░█
+█░░░░░░░░░░░█░░░█░░░█░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░█░░░░░█░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+████████████████████████████████
+
+E01: Error
+
+████████████████████████████████
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░█░░░█░░░░█
+█░░░░░░░░░░░░█░███░█░░░█░█░░░░░█
+█░░░░░░░░░░░░░█████░░░░░█░░░░░░█
+█░░░░░░░░░░░░░█████░░░░█░█░░░░░█
+█░░░░░░░░░░░░░░███░░░░█░░░█░░░░█
+█░░░░░░░░░░░░░░███░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░█░░░░░█░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+████████████████████████████████
+
+A01: Execute Action
+
+████████████████████████████████
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░█░░░░░█░░░░░░█
+█░░░░░░░░░░░░░░░░███░░░█░█░░░░░█
+█░░░░░░░░░░░░░░░█████░█░░░█░░░░█
+█░░░░░░░░░░░░░░░░███░░░█░█░░░░░█
+█░░░░░░░░░░░░░░░░░█░█░░░█░░░░░░█
+█░░░░░░░░░░░░░░░░░██░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░███░░░░░░░░░░░░░█
+█░░░░░░░░░░░░██░░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░█░░░░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░█░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░█░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░██░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░░█░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░░░█░░░░░░░░░░░█
+█░░░░░░░░░░░░░░█░░░░█░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░█░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░█
+████████████████████████████████
+</pre>
+</body>
+</html>

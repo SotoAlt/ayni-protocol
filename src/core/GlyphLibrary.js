@@ -54,16 +54,22 @@ const FOUNDATION_GLYPHS = {
 
 /**
  * Extended glyph specifications (Phase 2 expansion)
+ *
+ * Design principles for visual distinction:
+ * 1. Each category uses distinct poses
+ * 2. Symbol positions vary (top-right, bottom-right, top-left)
+ * 3. Symbols within same pose must differ significantly
+ * 4. Target: >100 bits Hamming distance between all pairs
  */
 const EXTENDED_GLYPHS = {
-  // Query variants
+  // Query variants - all use arms_up pose, vary symbols and positions
   Q02: {
     id: 'Q02',
     meaning: 'Query API',
     category: 'query',
     pose: 'arms_up',
     symbol: 'network',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 24, y: 20 },  // Different position
     tags: ['query', 'api', 'network', 'request']
   },
   Q03: {
@@ -72,7 +78,7 @@ const EXTENDED_GLYPHS = {
     category: 'query',
     pose: 'arms_up',
     symbol: 'search',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },    // Left side
     tags: ['search', 'find', 'lookup']
   },
   Q04: {
@@ -81,16 +87,16 @@ const EXTENDED_GLYPHS = {
     category: 'query',
     pose: 'arms_up',
     symbol: 'document',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 20 },   // Bottom left
     tags: ['query', 'filter', 'where', 'condition']
   },
 
-  // Response variants
+  // Response variants - arms_down + receiving poses, vary symbols and positions
   R02: {
     id: 'R02',
     meaning: 'Response with Data',
     category: 'response',
-    pose: 'arms_down',
+    pose: 'receiving',               // Different pose
     symbol: 'document',
     symbolPosition: { x: 24, y: 8 },
     tags: ['response', 'data', 'result', 'payload']
@@ -101,34 +107,34 @@ const EXTENDED_GLYPHS = {
     category: 'response',
     pose: 'arms_down',
     symbol: 'x',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['response', 'empty', 'null', 'none']
   },
   R04: {
     id: 'R04',
     meaning: 'Cached Response',
     category: 'response',
-    pose: 'arms_down',
+    pose: 'standing',                // Different pose
     symbol: 'clock',
     symbolPosition: { x: 24, y: 8 },
     tags: ['response', 'cache', 'cached', 'stored']
   },
 
-  // Error variants
+  // Error variants - use distressed + blocking, vary heavily
   E02: {
     id: 'E02',
     meaning: 'Payment Required',
     category: 'error',
     pose: 'blocking',
     symbol: 'coin',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 24, y: 20 },  // Bottom right
     tags: ['error', 'payment', '402', 'cost']
   },
   E03: {
     id: 'E03',
     meaning: 'Permission Denied',
     category: 'error',
-    pose: 'blocking',
+    pose: 'distressed',              // Different from E02
     symbol: 'lock',
     symbolPosition: { x: 24, y: 8 },
     tags: ['error', 'permission', 'denied', 'auth', 'forbidden']
@@ -137,9 +143,9 @@ const EXTENDED_GLYPHS = {
     id: 'E04',
     meaning: 'Not Found',
     category: 'error',
-    pose: 'distressed',
+    pose: 'blocking',                // Use blocking for 404
     symbol: 'search',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['error', '404', 'not found', 'missing']
   },
   E05: {
@@ -147,26 +153,26 @@ const EXTENDED_GLYPHS = {
     meaning: 'Timeout',
     category: 'error',
     pose: 'distressed',
-    symbol: 'clock',
-    symbolPosition: { x: 24, y: 8 },
+    symbol: 'hourglass',             // More distinct than clock
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['error', 'timeout', 'slow', 'expired']
   },
   E06: {
     id: 'E06',
     meaning: 'Rate Limited',
     category: 'error',
-    pose: 'blocking',
+    pose: 'distressed',
     symbol: 'warning',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 24, y: 20 },  // Bottom right
     tags: ['error', 'rate limit', '429', 'throttle']
   },
 
-  // Action variants
+  // Action variants - use different poses for each action
   A02: {
     id: 'A02',
     meaning: 'Update',
     category: 'action',
-    pose: 'action',
+    pose: 'pointing',                // Pointing for update
     symbol: 'arrowUp',
     symbolPosition: { x: 24, y: 8 },
     tags: ['action', 'update', 'modify', 'change']
@@ -175,16 +181,16 @@ const EXTENDED_GLYPHS = {
     id: 'A03',
     meaning: 'Delete',
     category: 'action',
-    pose: 'action',
+    pose: 'blocking',                // Blocking for delete
     symbol: 'x',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['action', 'delete', 'remove', 'destroy']
   },
   A04: {
     id: 'A04',
     meaning: 'Create',
     category: 'action',
-    pose: 'action',
+    pose: 'celebrating',             // Celebrating for create
     symbol: 'document',
     symbolPosition: { x: 24, y: 8 },
     tags: ['action', 'create', 'new', 'add']
@@ -195,17 +201,17 @@ const EXTENDED_GLYPHS = {
     category: 'action',
     pose: 'action',
     symbol: 'retry',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side for distinction
     tags: ['action', 'retry', 'again', 'repeat']
   },
 
-  // State glyphs
+  // State glyphs - unique poses per state
   S01: {
     id: 'S01',
     meaning: 'Idle',
     category: 'state',
     pose: 'standing',
-    symbol: null,
+    symbol: null,                    // No symbol - just pose
     tags: ['state', 'idle', 'ready', 'waiting']
   },
   S02: {
@@ -214,16 +220,16 @@ const EXTENDED_GLYPHS = {
     category: 'state',
     pose: 'thinking',
     symbol: 'gear',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['state', 'processing', 'working', 'busy']
   },
   S03: {
     id: 'S03',
     meaning: 'Waiting',
     category: 'state',
-    pose: 'standing',
+    pose: 'receiving',               // Different pose
     symbol: 'hourglass',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 24, y: 20 },  // Bottom right
     tags: ['state', 'waiting', 'pending', 'blocked']
   },
   S04: {
@@ -232,16 +238,16 @@ const EXTENDED_GLYPHS = {
     category: 'state',
     pose: 'celebrating',
     symbol: 'checkmark',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 20 },   // Bottom left
     tags: ['state', 'complete', 'done', 'finished']
   },
 
-  // Payment glyphs
+  // Payment glyphs - unique poses + symbol positions
   P01: {
     id: 'P01',
     meaning: 'Payment Sent',
     category: 'payment',
-    pose: 'arms_down',
+    pose: 'pointing',                // Pointing for sending
     symbol: 'coin',
     symbolPosition: { x: 24, y: 8 },
     tags: ['payment', 'sent', 'paid', 'transfer']
@@ -251,7 +257,7 @@ const EXTENDED_GLYPHS = {
     meaning: 'Payment Confirmed',
     category: 'payment',
     pose: 'celebrating',
-    symbol: 'coin',
+    symbol: 'checkmark',             // Checkmark, not coin
     symbolPosition: { x: 24, y: 8 },
     tags: ['payment', 'confirmed', 'verified', 'success']
   },
@@ -259,9 +265,9 @@ const EXTENDED_GLYPHS = {
     id: 'P03',
     meaning: 'Refund',
     category: 'payment',
-    pose: 'arms_down',
+    pose: 'receiving',               // Receiving for refund
     symbol: 'arrowDown',
-    symbolPosition: { x: 24, y: 8 },
+    symbolPosition: { x: 6, y: 8 },   // Left side
     tags: ['payment', 'refund', 'return', 'reversed']
   }
 };
