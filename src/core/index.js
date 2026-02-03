@@ -23,15 +23,41 @@ export {
   default as Primitives
 } from './Primitives.js';
 
-// Humanoid poses
+// Motifs (unified pose/pattern system)
 export {
+  drawMotif,
+  getMotifNames,
+  hasMotif,
+  registerMotif,
+  MOTIF_CATEGORIES,
+  setMotifStyle,
+  getMotifStyle,
+  // Backward compatibility
   drawPose,
   getPoseNames,
   hasPose,
   registerPose,
   POSE_CATEGORIES,
-  default as Poses
-} from './Poses.js';
+  default as Motifs
+} from './Motifs.js';
+
+// Tocapu geometric patterns
+export {
+  drawTocapuMotif,
+  drawSteppedSpiral,
+  drawCheckerboard,
+  drawBrokenSymmetry,
+  drawDiamond,
+  drawChakana,
+  drawSteppedPyramid,
+  drawWavePattern,
+  drawConcentricSquares,
+  drawCrosshatch,
+  default as TocapuMotifs
+} from './TocapuMotifs.js';
+
+// Legacy Poses alias (backward compatibility)
+export { default as Poses } from './Motifs.js';
 
 // Symbol overlays
 export {

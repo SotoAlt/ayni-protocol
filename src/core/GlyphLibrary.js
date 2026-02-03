@@ -6,9 +6,12 @@
  */
 
 import { VisualGlyph } from './VisualGlyph.js';
-import { drawPose, POSE_CATEGORIES } from './Poses.js';
+import { drawMotif, MOTIF_CATEGORIES, setMotifStyle, getMotifStyle } from './Motifs.js';
 import { drawSymbol } from './Symbols.js';
 import { drawBorder } from './Primitives.js';
+
+// Re-export for backward compatibility
+export { MOTIF_CATEGORIES as POSE_CATEGORIES };
 
 /**
  * Foundation glyph specifications (Phase 1)
@@ -276,9 +279,31 @@ const EXTENDED_GLYPHS = {
  * GlyphLibrary class
  */
 export class GlyphLibrary {
-  constructor() {
+  constructor(options = {}) {
     this.specs = { ...FOUNDATION_GLYPHS };
     this.cache = new Map();
+    this.style = options.style || 'geometric';
+  }
+
+  /**
+   * Set the motif style for glyph generation
+   * @param {'geometric'|'representational'} style - Style to use
+   */
+  setStyle(style) {
+    if (['geometric', 'representational'].includes(style)) {
+      this.style = style;
+      this.clearCache(); // Clear cache when style changes
+      setMotifStyle(style);
+    }
+    return this;
+  }
+
+  /**
+   * Get the current motif style
+   * @returns {string} Current style
+   */
+  getStyle() {
+    return this.style;
   }
 
   /**
@@ -312,28 +337,34 @@ export class GlyphLibrary {
   /**
    * Generate a glyph from its specification
    * @param {string} id - Glyph ID
+   * @param {Object} options - Generation options
    * @returns {VisualGlyph|null} Generated glyph
    */
-  get(id) {
+  get(id, options = {}) {
+    const style = options.style || this.style;
+    const cacheKey = `${id}_${style}`;
+
     // Check cache first
-    if (this.cache.has(id)) {
-      return this.cache.get(id).clone();
+    if (this.cache.has(cacheKey)) {
+      return this.cache.get(cacheKey).clone();
     }
 
     const spec = this.specs[id];
     if (!spec) return null;
 
-    const glyph = this.generateFromSpec(spec);
-    this.cache.set(id, glyph);
+    const glyph = this.generateFromSpec(spec, { style });
+    this.cache.set(cacheKey, glyph);
     return glyph.clone();
   }
 
   /**
    * Generate glyph from specification
    * @param {Object} spec - Glyph specification
+   * @param {Object} options - Generation options
+   * @param {string} options.style - Motif style: 'geometric' or 'representational'
    * @returns {VisualGlyph} Generated glyph
    */
-  generateFromSpec(spec) {
+  generateFromSpec(spec, options = {}) {
     const glyph = new VisualGlyph({
       id: spec.id,
       meaning: spec.meaning,
@@ -343,9 +374,9 @@ export class GlyphLibrary {
     // Draw border
     drawBorder(glyph);
 
-    // Draw humanoid pose
+    // Draw motif (pose or geometric pattern)
     if (spec.pose) {
-      drawPose(glyph, spec.pose);
+      drawMotif(glyph, spec.pose, 16, 16, { style: options.style });
     }
 
     // Draw symbol overlay
@@ -470,6 +501,77 @@ export class GlyphLibrary {
    */
   clearCache() {
     this.cache.clear();
+  }
+
+  /**
+   * Calculate Hamming distance matrix between all glyphs
+   * @param {Object} options - Options
+   * @param {string[]} options.ids - Specific glyph IDs to include (default: all)
+   * @param {number} options.minDistance - Minimum required distance (for validation)
+   * @returns {Object} Matrix and validation results
+   */
+  hammingDistanceMatrix(options = {}) {
+    const ids = options.ids || this.list();
+    const minDistance = options.minDistance || 100;
+    const matrix = {};
+    const pairs = [];
+    let minFound = Infinity;
+    let maxFound = 0;
+    let violations = [];
+
+    // Generate all glyphs
+    const glyphs = {};
+    for (const id of ids) {
+      glyphs[id] = this.get(id);
+    }
+
+    // Calculate pairwise distances
+    for (let i = 0; i < ids.length; i++) {
+      const id1 = ids[i];
+      matrix[id1] = {};
+
+      for (let j = 0; j < ids.length; j++) {
+        const id2 = ids[j];
+
+        if (i === j) {
+          matrix[id1][id2] = 0;
+          continue;
+        }
+
+        const distance = glyphs[id1].hammingDistance(glyphs[id2]);
+        matrix[id1][id2] = distance;
+
+        if (i < j) {
+          pairs.push({ id1, id2, distance });
+
+          if (distance < minFound) minFound = distance;
+          if (distance > maxFound) maxFound = distance;
+
+          if (distance < minDistance) {
+            violations.push({ id1, id2, distance, required: minDistance });
+          }
+        }
+      }
+    }
+
+    // Sort pairs by distance
+    pairs.sort((a, b) => a.distance - b.distance);
+
+    return {
+      matrix,
+      pairs,
+      stats: {
+        min: minFound,
+        max: maxFound,
+        avg: pairs.reduce((sum, p) => sum + p.distance, 0) / pairs.length,
+        count: pairs.length
+      },
+      validation: {
+        minRequired: minDistance,
+        passed: violations.length === 0,
+        violations
+      }
+    };
   }
 
   /**

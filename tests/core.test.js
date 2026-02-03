@@ -17,7 +17,7 @@ import {
   drawRect,
   drawBorder
 } from '../src/core/Primitives.js';
-import { drawPose, getPoseNames } from '../src/core/Poses.js';
+import { drawPose, getPoseNames } from '../src/core/Motifs.js';
 import { drawSymbol, getSymbolNames } from '../src/core/Symbols.js';
 
 describe('VisualGlyph', () => {

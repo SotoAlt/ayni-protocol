@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AYNI // Glyph River</title>
+
+  <!-- Fonts: Sharp, technical feel with a touch of humanity -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+
+  <!-- D3.js for network graph -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+
+  <link rel="stylesheet" href="css/cyberpunk.css">
+</head>
+<body>
+  <!-- Scan lines overlay -->
+  <div class="scanlines"></div>
+
+  <!-- Noise texture -->
+  <div class="noise"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header__brand">
+      <div class="header__logo">
+        <svg viewBox="0 0 32 32" class="chakana-icon">
+          <rect x="12" y="4" width="8" height="8" fill="currentColor"/>
+          <rect x="12" y="20" width="8" height="8" fill="currentColor"/>
+          <rect x="4" y="12" width="8" height="8" fill="currentColor"/>
+          <rect x="20" y="12" width="8" height="8" fill="currentColor"/>
+          <rect x="12" y="12" width="8" height="8" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="header__title">
+        <span class="header__name">AYNI</span>
+        <span class="header__subtitle">GLYPH RIVER v2.0</span>
+      </div>
+    </div>
+
+    <div class="header__stats">
+      <div class="stat">
+        <span class="stat__value" id="stat-messages">0</span>
+        <span class="stat__label">MESSAGES</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" id="stat-agents">0</span>
+        <span class="stat__label">AGENTS</span>
+      </div>
+      <div class="stat">
+        <span class="stat__value" id="stat-bytes">0</span>
+        <span class="stat__label">BYTES</span>
+      </div>
+      <div class="stat stat--highlight">
+        <span class="stat__value" id="stat-savings">0%</span>
+        <span class="stat__label">TOKEN SAVINGS</span>
+      </div>
+    </div>
+
+    <div class="header__controls">
+      <button class="btn btn--icon" id="btn-pause" title="Pause/Resume">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="icon icon--play">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+        <svg viewBox="0 0 24 24" fill="currentColor" class="icon icon--pause">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      </button>
+      <button class="btn btn--icon" id="btn-speed" title="Speed">
+        <span class="speed-indicator">1x</span>
+      </button>
+      <button class="btn btn--icon" id="btn-style" title="Toggle Style">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main">
+    <!-- Left Panel: Glyph River -->
+    <section class="panel panel--river">
+      <div class="panel__header">
+        <h2 class="panel__title">
+          <span class="blink">▌</span> GLYPH STREAM
+        </h2>
+        <div class="panel__badge">LIVE</div>
+      </div>
+      <div class="river-container" id="river-container">
+        <!-- Columns will be generated dynamically -->
+      </div>
+      <div class="river-gradient river-gradient--top"></div>
+      <div class="river-gradient river-gradient--bottom"></div>
+    </section>
+
+    <!-- Right Panel: Network Graph -->
+    <section class="panel panel--network">
+      <div class="panel__header">
+        <h2 class="panel__title">AGENT NETWORK</h2>
+        <div class="panel__legend">
+          <span class="legend-item legend-item--query">Q</span>
+          <span class="legend-item legend-item--response">R</span>
+          <span class="legend-item legend-item--error">E</span>
+          <span class="legend-item legend-item--action">A</span>
+          <span class="legend-item legend-item--payment">P</span>
+        </div>
+      </div>
+      <div class="network-container" id="network-container">
+        <svg id="network-svg"></svg>
+      </div>
+      <div class="network-info" id="network-info">
+        <span class="network-info__label">Hover over a node for details</span>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Panel: Timeline -->
+  <section class="timeline-panel">
+    <div class="timeline-header">
+      <h2 class="timeline-title">
+        <svg viewBox="0 0 24 24" fill="currentColor" class="timeline-icon">
+          <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+        </svg>
+        AUDIT LOG
+      </h2>
+      <button class="btn btn--small" id="btn-clear-log">CLEAR</button>
+    </div>
+    <div class="timeline-container" id="timeline-container">
+      <!-- Timeline entries will be generated dynamically -->
+      <div class="timeline-empty">
+        <span>Waiting for messages...</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Glyph Detail Modal -->
+  <div class="modal" id="glyph-modal">
+    <div class="modal__backdrop"></div>
+    <div class="modal__content">
+      <button class="modal__close" id="modal-close">&times;</button>
+      <div class="modal__header">
+        <span class="modal__glyph-id" id="modal-glyph-id">Q01</span>
+        <span class="modal__glyph-meaning" id="modal-glyph-meaning">Query Database</span>
+      </div>
+      <div class="modal__body">
+        <div class="modal__visual">
+          <canvas id="modal-canvas" width="256" height="256"></canvas>
+        </div>
+        <div class="modal__details">
+          <div class="detail-row">
+            <span class="detail-label">From</span>
+            <span class="detail-value" id="modal-from">Alice</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">To</span>
+            <span class="detail-value" id="modal-to">Bob</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Timestamp</span>
+            <span class="detail-value" id="modal-time">--</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Size</span>
+            <span class="detail-value" id="modal-size">128 bytes</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Encrypted</span>
+            <span class="detail-value" id="modal-encrypted">Yes</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal__payload">
+        <div class="payload-header">ENCRYPTED PAYLOAD</div>
+        <pre class="payload-content" id="modal-payload">{ "table": "users", "filter": { "active": true } }</pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
