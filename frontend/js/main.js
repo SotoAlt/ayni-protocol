@@ -4,7 +4,7 @@
  * Initializes all components and wires them together.
  */
 
-import { GlyphRiver } from './glyphRiver.js';
+import { TextileRiver } from './textileRiver.js';
 import { NetworkGraph } from './networkGraph.js';
 import { Timeline } from './timeline.js';
 import { MockWebSocket } from './websocket.js';
@@ -26,10 +26,11 @@ let river, network, timeline, ws;
  * Initialize the application
  */
 function init() {
-  // Initialize Glyph River
-  river = new GlyphRiver('river-container', {
-    maxGlyphs: 8,
-    onGlyphClick: showGlyphModal
+  // Initialize Textile River (Andean textile-inspired visualization)
+  river = new TextileRiver('textile-river', {
+    maxMessages: 100,
+    glyphSize: 128,
+    onMessageClick: showGlyphModal
   });
 
   // Initialize Network Graph
@@ -80,8 +81,8 @@ function handleMessage(message) {
   state.totalMessages++;
   state.totalBytes += message.size;
 
-  // Add to river
-  river.addGlyph(message);
+  // Add to textile river
+  river.addMessage(message);
 
   // Add to network
   network.addLink(message.from, message.to, message.category);
