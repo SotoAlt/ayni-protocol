@@ -4,9 +4,11 @@
 
 Ayni is built in phases, each adding layers of functionality while maintaining the core principle: **agents co-create the protocol**.
 
+**Honest Assessment:** This roadmap reflects actual implementation status, not aspirational claims.
+
 ---
 
-## ✅ Phase 1: Foundation (DONE)
+## ✅ Phase 1: Foundation (COMPLETE)
 
 **Timeline:** Jan 31 - Feb 3, 2026 (3 days)
 
@@ -19,6 +21,7 @@ Ayni is built in phases, each adding layers of functionality while maintaining t
 - [x] VLM reading test (vision models can parse)
 - [x] Working demo code
 - [x] Initial documentation
+- [x] Basic XOR encryption demo
 
 **Key Findings:**
 - Glyphs = 2 tokens each (GPT-4 cl100k_base)
@@ -30,282 +33,307 @@ Ayni is built in phases, each adding layers of functionality while maintaining t
 
 ---
 
-## 🔄 Phase 2: DAO + zkTLS (Current)
+## ✅ Phase 1.5: Core Protocol Implementation (COMPLETE)
 
-**Timeline:** Feb 3 - Mar 1, 2026 (4 weeks)
+**Timeline:** Feb 3-4, 2026 (1-2 days)
 
-**Goal:** Add governance and privacy layers
+**Goal:** Build proper modular architecture and core protocol
 
-### Week 1: Glyph Library Expansion
-- [ ] Design 20 more glyphs (total: 24)
-  - Q01-Q10: Queries (DB, API, file, search, etc)
-  - R01-R10: Responses (success, partial, cached, etc)
-  - E01-E10: Errors (timeout, auth, not found, etc)
-  - A01-A04: Actions (create, update, delete, execute)
-- [ ] Document visual design patterns
-- [ ] Create glyph generation tools
-- [ ] Test VLM comprehension at scale
+**Deliverables:**
+- [x] Modular codebase architecture
+  - `src/core/` - VisualGlyph, Primitives, Poses, Symbols, Renderer
+  - `src/protocol/` - Encoder, Decoder, Agent
+- [x] 24 glyphs across 6 categories (query, response, error, action, state, payment)
+- [x] Encoder/Decoder protocol implementation
+- [x] Agent class for high-level communication
+- [x] AES-256-GCM encryption support
+- [x] PNG/SVG rendering
+- [x] JSON-based glyph library (extensible)
+- [x] VLM validation test suite
+- [x] npm-publishable package structure
 
-### Week 2: DAO Smart Contracts
-- [ ] Write AyniRegistry.sol (ERC-8004)
-- [ ] Write AyniDAO.sol (governance)
-- [ ] Write AyniToken.sol (ERC-20)
-- [ ] Test suite for contracts
-- [ ] Deploy to testnet (Sepolia)
+**Code Quality Improvements:**
+- Split monolithic `generator.js` (408 lines) into 7 focused modules
+- Clean separation of concerns (rendering, encoding, communication)
+- Proper ES module exports
+- Comprehensive JSDoc documentation
 
-### Week 3: zkTLS Integration
-- [ ] Research implementation (TLS-Notary vs pure SNARKs)
-- [ ] Build encryption layer (AES-256-GCM)
-- [ ] Implement key exchange (Diffie-Hellman)
-- [ ] Create zkSNARK circuits for validation
-- [ ] Test with real agents
+**Technical Validation:**
+- Hamming distance analysis for visual confusion risk
+- Multi-resolution export (32x32 to 256x256)
+- Test prompt generation for VLM testing
 
-### Week 4: Arweave Integration
-- [ ] Build Arweave upload agent
-- [ ] Connect to DAO (monitor approved proposals)
-- [ ] Glyph generation from visual specs
-- [ ] On-chain registry pointer updates
-- [ ] Test end-to-end workflow
-
-**Status:** Week 1 in progress 🔄
+**Status:** Complete ✅
 
 ---
 
-## 📅 Phase 3: Blockchain Deployment (Mar-Apr 2026)
+## 🔄 Phase 2: Validation & Expansion (Current)
 
-**Timeline:** Mar 1 - Apr 15, 2026 (6 weeks)
+**Timeline:** Feb 4 - Feb 28, 2026 (3-4 weeks)
 
-**Goal:** Production-ready blockchain layer
+**Goal:** Validate VLM reliability and expand glyph library
 
-### March (Weeks 1-2): Audit + Testing
-- [ ] Smart contract audit (professional firm)
-- [ ] Fix any vulnerabilities found
+### Week 1-2: VLM Validation (CRITICAL)
+- [ ] Run VLM tests with GPT-4V, Claude Vision, Gemini
+- [ ] Test at multiple resolutions (32x32, 64x64, 128x128)
+- [ ] Document accuracy by model and resolution
+- [ ] Determine minimum viable resolution
+- [ ] **Decision point:** If <95% accuracy, pivot strategy
+
+### Week 2-3: Glyph Library Expansion
+- [ ] Design additional glyphs based on usage patterns
+- [ ] Expand to 50+ glyphs if VLM validation passes
+- [ ] Add domain-specific symbol overlays
+- [ ] Create visual design guidelines
+- [ ] Implement glyph proposal workflow
+
+### Week 3-4: Integration Testing
+- [ ] End-to-end multi-agent workflow tests
+- [ ] Encryption/decryption stress tests
+- [ ] Token efficiency benchmarks at scale
+- [ ] Edge case handling
+
+**Success Criteria:**
+- VLM accuracy ≥95% on foundation glyphs
+- 50+ glyphs in library
+- <100ms encoding/decoding latency
+- Working encryption demo
+
+**Risks:**
+- VLM reliability is UNVALIDATED (critical unknown)
+- May require resolution increase (32→64) if accuracy is low
+- Cross-model consistency unknown
+
+**Status:** Not started 🔄
+
+---
+
+## 📅 Phase 3: DAO Contracts (Mar 2026)
+
+**Timeline:** Mar 1 - Mar 31, 2026 (4 weeks)
+
+**Goal:** Implement on-chain governance
+
+**Prerequisites:**
+- Phase 2 VLM validation must pass
+- Glyph library stabilized (no major changes)
+
+### Deliverables
+- [ ] AyniRegistry.sol - Glyph registry (ERC-8004 compatible)
+- [ ] AyniToken.sol - Governance token (ERC-20)
+- [ ] AyniDAO.sol - Proposal and voting system
+- [ ] Comprehensive test suite (100%+ coverage)
+- [ ] Sepolia testnet deployment
+- [ ] Basic governance UI
+
+**Technical Decisions Needed:**
+- Final ERC-8004 specification
+- Token economics (supply, distribution, staking)
+- Proposal bond amount
+- Voting thresholds
+
+**Current Status:** 0 lines of Solidity written (specification only)
+
+---
+
+## 📅 Phase 4: zkTLS Integration (Apr 2026)
+
+**Timeline:** Apr 1 - Apr 30, 2026 (4 weeks)
+
+**Goal:** Production-grade privacy layer
+
+**Options Analysis:**
+1. **TLS-Notary** (Recommended for MVP)
+   - Proven technology
+   - Semi-trusted model
+   - 4-6 weeks implementation
+   - Lower risk
+
+2. **Pure zk-SNARKs**
+   - Fully trustless
+   - 12+ weeks implementation
+   - Higher risk, higher reward
+
+### Deliverables
+- [ ] zkTLS implementation choice (TLS-Notary recommended)
+- [ ] AES-256-GCM encryption integration
+- [ ] Key exchange (Diffie-Hellman)
+- [ ] Proof generation and verification
+- [ ] Privacy documentation
+
+**Current Status:** Architecture documented, 0% implemented
+
+---
+
+## 📅 Phase 5: Blockchain Deployment (May-Jun 2026)
+
+**Timeline:** May 1 - Jun 30, 2026 (8 weeks)
+
+**Goal:** Production launch
+
+### May: Audit & Preparation
+- [ ] Professional smart contract audit ($20-50K)
+- [ ] Fix vulnerabilities
 - [ ] Extensive testnet testing
-- [ ] Load testing (1000+ proposals)
 - [ ] Security review of zkTLS
 
-### March (Weeks 3-4): Mainnet Preparation
-- [ ] Deploy to Ethereum mainnet
-- [ ] Set up multisig (3-of-5 for admin)
-- [ ] Initialize registry with 24 glyphs
-- [ ] Launch $AYNI token
-- [ ] Set up block explorer integration
+### June: Mainnet Launch
+- [ ] Ethereum mainnet deployment
+- [ ] Multisig setup (3-of-5)
+- [ ] Initialize glyph registry
+- [ ] $AYNI token launch
+- [ ] Block explorer integration
 
-### April (Weeks 1-2): x402 Payments
-- [ ] Write AyniPayments.sol
-- [ ] Test payment flows
-- [ ] Integration with major agents
-- [ ] Payment UI/dashboard
-- [ ] Document pricing models
+### x402 Payment Protocol
+- [ ] AyniPayments.sol
+- [ ] Payment flow integration
+- [ ] Pricing model documentation
 
 **Milestone:** First paid agent query via Ayni ✨
 
 ---
 
-## 📅 Phase 4: Ecosystem Growth (Apr-Jul 2026)
+## 📅 Phase 6: Ecosystem Growth (Jul-Dec 2026)
 
-**Timeline:** Apr 15 - Jul 31, 2026 (3.5 months)
+**Timeline:** Jul 1 - Dec 31, 2026 (6 months)
 
 **Goal:** Wide adoption and integrations
 
-### April-May: Platform Integrations
-- [ ] OpenClaw skill (dogfood our own protocol)
+### Platform Integrations
 - [ ] LangChain integration
 - [ ] AutoGPT plugin
-- [ ] AgentGPT support
-- [ ] Moltbook native support
+- [ ] OpenAI function calling compatible
+- [ ] MCP server implementation
 
-### May-June: Developer Tools
-- [ ] JavaScript SDK (npm package)
+### Developer Tools
+- [ ] JavaScript SDK (npm package) ← partially done
 - [ ] Python SDK (pip package)
 - [ ] CLI tool (`ayni-cli`)
 - [ ] Visual glyph editor (web app)
-- [ ] Documentation site (docs.ayni-protocol.com)
+- [ ] Documentation site
 
-### June-July: Community Building
-- [ ] Launch Discord server
+### Community Building
+- [ ] Discord server
 - [ ] Weekly community calls
-- [ ] Bounty program ($10K in $AYNI)
+- [ ] Bounty program
 - [ ] Hackathon sponsorship
-- [ ] Educational content (YouTube, blog)
 
 **Milestone:** 100+ agents using Ayni daily 🎯
 
 ---
 
-## 📅 Phase 5: Advanced Features (Aug-Dec 2026)
-
-**Timeline:** Aug 1 - Dec 31, 2026 (5 months)
-
-**Goal:** Protocol maturity and innovation
-
-### August-September: Optimization
-- [ ] Glyph compression (reduce from 128 bytes)
-- [ ] Batch operations (multiple glyphs in one TX)
-- [ ] L2 deployment (Arbitrum, Optimism, Base)
-- [ ] Gas optimization for contracts
-- [ ] Performance benchmarks
-
-### October-November: Advanced Privacy
-- [ ] Homomorphic encryption (compute on encrypted data)
-- [ ] Anonymous proposals (zkSNARKs for proposer privacy)
-- [ ] Confidential voting (ballot secrecy)
-- [ ] Selective disclosure (reveal parts of messages)
-- [ ] Audit trail without data access
-
-### December: Multi-Chain
-- [ ] Cross-chain glyph registry (Cosmos IBC)
-- [ ] Bridge to Solana, Polygon, etc
-- [ ] Universal glyph ID standard
-- [ ] Interoperability testing
-- [ ] Documentation for multi-chain agents
-
-**Milestone:** 1000+ glyphs, 10,000+ agents 🚀
-
----
-
-## 📅 Phase 6: Cultural Integration (2027+)
+## 📅 Phase 7: Cultural Integration (2027+)
 
 **Timeline:** Jan 2027 onward
 
 **Goal:** Fulfill original vision - bridge ancient and modern
 
-### Q1 2027: Tocapu Research
+### Tocapu Research
 - [ ] Partner with Andean cultural organizations
 - [ ] Digitize tocapu pattern vocabulary
 - [ ] Document symbolic meanings
 - [ ] Study compositional grammar
-- [ ] Ethical review board
+- [ ] Establish ethical review board
 
-### Q2 2027: Tocapu Integration
+### Integration
 - [ ] Expand visual vocabulary with tocapu patterns
 - [ ] Maintain cultural accuracy
 - [ ] Share benefits with source communities
 - [ ] Educational programs
-- [ ] Physical weavings (Jacquard loom output)
-
-### Q3 2027: Regional Dialects
-- [ ] Quechua regional styles
-- [ ] Aymara patterns
-- [ ] Other Andean traditions
-- [ ] Style transfer models
-- [ ] Cultural preservation archive
-
-### Q4 2027: Living Protocol
-- [ ] Protocol fully co-created by agents + communities
-- [ ] New symbols for modern concepts in traditional style
-- [ ] Cultural exchange programs
-- [ ] Documentation in Quechua/Spanish/English
-- [ ] Museum exhibitions
 
 **Milestone:** Protocol as cultural bridge 🌉
 
 ---
 
+## Implementation Gap Analysis
+
+### What Exists (as of Feb 3, 2026)
+
+| Component | Status | Location |
+|-----------|--------|----------|
+| Core glyph class | ✅ 100% | `src/core/VisualGlyph.js` |
+| Drawing primitives | ✅ 100% | `src/core/Primitives.js` |
+| Humanoid poses | ✅ 100% | `src/core/Poses.js` |
+| Symbol overlays | ✅ 100% | `src/core/Symbols.js` |
+| Glyph library | ✅ 100% | `src/core/GlyphLibrary.js` |
+| PNG/SVG rendering | ✅ 100% | `src/core/Renderer.js` |
+| Encoder | ✅ 100% | `src/protocol/Encoder.js` |
+| Decoder | ✅ 100% | `src/protocol/Decoder.js` |
+| Agent class | ✅ 100% | `src/protocol/Agent.js` |
+| VLM test suite | ✅ 100% | `tests/vlm-validation.test.js` |
+
+### What's Missing
+
+| Component | Specification | Implementation |
+|-----------|--------------|----------------|
+| VLM validation results | 100% | 0% (manual testing needed) |
+| Smart contracts | 100% (pseudo) | 0% |
+| zkTLS | 100% (design) | 0% |
+| Arweave agent | 100% (spec) | 0% |
+| x402 payments | 100% (spec) | 0% |
+| Python SDK | 0% | 0% |
+| Documentation site | 0% | 0% |
+
+---
+
+## Risk Matrix
+
+### Critical Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| VLM unreliable at 32x32 | Protocol fails | Medium | Test early, have 64x64 fallback |
+| No adoption | Wasted effort | High | Dogfood, integrate with popular tools |
+| Security vulnerabilities | User harm | Medium | Professional audit, bug bounty |
+
+### Medium Risks
+
+| Risk | Impact | Likelihood | Mitigation |
+|------|--------|------------|------------|
+| zkTLS too complex | Delays | Medium | Start with TLS-Notary |
+| DAO governance overhead | Slow evolution | Medium | Tiered governance |
+| Competition copies | Lost advantage | Medium | Move tocapu earlier |
+
+---
+
+## Decision Points
+
+### Immediate (Phase 2)
+1. **VLM minimum resolution:** 32x32 or higher?
+2. **Cross-model consistency:** Require same interpretation across VLMs?
+
+### Phase 3
+1. **zkTLS approach:** TLS-Notary or pure SNARKs?
+2. **Token economics:** Fixed supply or inflationary?
+3. **Glyph library size:** Cap at 100, 1000, or unlimited?
+
+### Phase 5
+1. **Blockchain:** Ethereum L1, L2, or multi-chain?
+2. **x402 pricing:** Fixed, dynamic, or auction?
+
+---
+
 ## Success Metrics
 
-### Phase 2 (DAO + zkTLS)
-- ✅ 24+ glyphs in library
-- ✅ DAO contracts deployed to testnet
-- ✅ 10+ test proposals submitted
-- ✅ zkTLS working in demos
+### Phase 2
+- [ ] VLM accuracy ≥95%
+- [ ] 50+ glyphs
+- [ ] 10+ test scenarios passing
 
-### Phase 3 (Blockchain)
-- ✅ Mainnet deployment
-- ✅ 50+ agents using protocol
-- ✅ $1K+ in x402 payments processed
-- ✅ No critical vulnerabilities
+### Phase 3
+- [ ] Contracts deployed to testnet
+- [ ] 10+ test proposals
+- [ ] Zero critical vulnerabilities
 
-### Phase 4 (Ecosystem)
-- ✅ 100+ daily active agents
-- ✅ 5+ platform integrations
-- ✅ 1000+ GitHub stars
-- ✅ Active community (Discord 100+ members)
+### Phase 5
+- [ ] Mainnet deployment
+- [ ] 50+ agents
+- [ ] $1K+ x402 payments
 
-### Phase 5 (Advanced)
-- ✅ 1000+ glyphs
-- ✅ 10,000+ agents
-- ✅ Multi-chain support
-- ✅ Self-sustaining DAO treasury
-
-### Phase 6 (Cultural)
-- ✅ Partnership with Andean communities
-- ✅ Tocapu patterns integrated
-- ✅ Cultural education programs
-- ✅ Physical weavings exhibited
-
----
-
-## Risks & Mitigation
-
-### Technical Risks
-**Risk:** zkTLS too slow for production  
-**Mitigation:** Optimize circuits, use batch proofs, consider alternatives
-
-**Risk:** Arweave downtime  
-**Mitigation:** Local cache, IPFS backup, degraded mode
-
-**Risk:** Smart contract bugs  
-**Mitigation:** Professional audit, extensive testing, bug bounty
-
-### Adoption Risks
-**Risk:** Agents don't use protocol  
-**Mitigation:** Dogfood with OpenClaw, integrate with popular frameworks
-
-**Risk:** DAO governance fails  
-**Mitigation:** Start centralized, gradual decentralization, human oversight
-
-**Risk:** Not enough glyph proposals  
-**Mitigation:** Automatic detection in agents, bounties for proposals
-
-### Cultural Risks
-**Risk:** Cultural appropriation concerns  
-**Mitigation:** Partner with communities, share benefits, ethical review
-
-**Risk:** Misrepresentation of traditions  
-**Mitigation:** Cultural accuracy review, community veto power
-
----
-
-## Resource Requirements
-
-### Phase 2-3 (DAO + Blockchain)
-- **Development:** 2 full-time devs (3 months)
-- **Smart contract audit:** $20-50K
-- **Infrastructure:** $500/month (RPC, Arweave)
-- **Legal:** $10K (token compliance)
-
-### Phase 4 (Ecosystem)
-- **Community manager:** 1 full-time
-- **Technical writers:** 2 part-time
-- **Bounty program:** $10K in $AYNI
-- **Marketing:** $5K/month
-
-### Phase 5-6 (Advanced + Cultural)
-- **Researchers:** 2-3 for tocapu study
-- **Cultural liaisons:** 2-3 for community partnerships
-- **Grants:** $50K+ for cultural programs
-
-**Funding:** DAO treasury, grants, partnerships
-
----
-
-## Open Questions
-
-**For Phase 2:**
-- Which zkTLS implementation? (TLS-Notary vs pure SNARKs)
-- Optimal glyph library size? (100? 1000? Unlimited?)
-- Treasury fee structure? (5%? 10%? Variable?)
-
-**For Phase 3:**
-- Which chains to support first? (Ethereum + L2s?)
-- x402 pricing model? (Fixed? Dynamic? Auction?)
-- Emergency governance? (Multisig? Timelock? Both?)
-
-**For Phase 6:**
-- Cultural partnership structure? (DAO membership? Revenue share?)
-- Tocapu integration approach? (Separate namespace? Merged vocabulary?)
-- Physical output? (Jacquard looms? 3D printing? Both?)
+### Phase 6
+- [ ] 100+ daily active agents
+- [ ] 5+ platform integrations
+- [ ] 1000+ GitHub stars
 
 ---
 
@@ -313,30 +341,27 @@ Ayni is built in phases, each adding layers of functionality while maintaining t
 
 **Developers:**
 - Check GitHub issues for current tasks
-- Join Discord for technical discussions
+- Run `npm run vlm-test` and report results
 - Submit PRs for Phase 2 features
 
-**Agents:**
-- Use the protocol in your workflows
-- Propose glyphs when you find missing concepts
-- Vote on DAO proposals
-
 **Researchers:**
-- Help with tocapu pattern research
-- Document cultural meanings
-- Connect with Andean communities
+- Help validate VLM reliability
+- Test cross-model consistency
+- Document failure modes
 
 **Community:**
-- Spread the word
-- Create content (tutorials, demos)
-- Test the protocol and report bugs
+- Test the protocol
+- Report bugs
+- Create tutorials
 
 ---
 
-**Current Phase:** 2 (DAO + zkTLS) 🔄  
-**Next Milestone:** 24 glyphs + DAO contracts on testnet  
-**Timeline:** 4 weeks remaining
+**Current Phase:** 1.5 Complete, Phase 2 Starting 🔄
+
+**Next Priority:** VLM validation (critical path)
+
+**Honest Timeline:** 6+ months to production, not weeks
 
 **Last Updated:** February 3, 2026
 
-**Let's build together. 🤝**
+**Let's build together, realistically. 🤝**

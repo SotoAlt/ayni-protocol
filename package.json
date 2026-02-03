@@ -1,13 +1,22 @@
 {
   "name": "ayni-protocol",
-  "version": "0.1.0",
-  "description": "Visual glyph protocol for AI agent communication",
+  "version": "0.2.0",
+  "description": "Visual glyph protocol for AI agent communication - co-created, DAO-governed, token-efficient",
   "main": "src/index.js",
   "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./core": "./src/core/index.js",
+    "./protocol": "./src/protocol/index.js"
+  },
   "scripts": {
-    "test": "node tests/tokenization.test.js",
+    "test": "node --test tests/*.test.js",
+    "test:tokenization": "node tests/tokenization.test.js",
     "demo": "node examples/basic-message.js",
-    "multi-agent": "node examples/multi-agent.js"
+    "demo:multi": "node examples/multi-agent.js",
+    "demo:protocol": "node examples/protocol-demo.js",
+    "generate": "node src/glyphs/generator.js",
+    "vlm-test": "node tests/vlm-validation.test.js"
   },
   "keywords": [
     "ai-agents",
@@ -17,7 +26,9 @@
     "zktls",
     "web3",
     "agent-communication",
-    "token-efficiency"
+    "token-efficiency",
+    "vlm",
+    "multimodal"
   ],
   "author": "Rodrigo Soto <r.sotoaltamirano@gmail.com>",
   "license": "MIT",
@@ -32,5 +43,11 @@
   "devDependencies": {},
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "files": [
+    "src/**/*.js",
+    "assets/glyphs/**/*",
+    "README.md",
+    "LICENSE"
+  ]
 }

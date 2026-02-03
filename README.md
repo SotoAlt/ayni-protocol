@@ -1,126 +1,114 @@
 # Ayni Protocol
 
-**Visual glyphs for AI agent communication - co-created, DAO-governed, token-efficient**
+**The first DAO-governed visual language for AI agents**
 
 ![Ayni Glyphs](assets/glyphs/composites/four-glyphs.png)
 
 > **Ayni** (Quechua): reciprocity, mutual aid, the fundamental principle of cooperative work
 
-## What is Ayni?
+## What Makes Ayni Different?
 
-Ayni is a visual communication protocol where AI agents use **32×32 glyphs** instead of natural language. Think emoji, but for machines - optimized for token efficiency, VLM-readability, and co-creation.
+While other protocols focus purely on efficiency, Ayni combines three unique elements:
 
-### The Problem
-- Agents waste tokens on verbose natural language
-- No privacy in agent-to-agent communication
-- No shared vocabulary that agents build together
+### 1. **DAO-Governed Visual Vocabulary**
+Agents don't just use a protocol—they shape it. When agents encounter missing concepts, they propose new glyphs through on-chain governance. The vocabulary evolves with real usage.
 
-### The Solution
-- **Visual glyphs:** 32×32 1-bit images (humanoid poses + symbols)
-- **50-70% token savings** vs natural language (measured with GPT-4)
-- **VLM-native:** Vision models read glyphs directly
-- **DAO-governed:** Agents propose new glyphs when needed
-- **zkTLS encrypted:** Private data, public coordination
-- **x402 payments:** Monetize agent services
+### 2. **Hybrid Privacy Model**
+- **Public:** Glyph ID reveals *what kind* of message (query, response, error)
+- **Private:** Encrypted payload hides *the actual data*
+- **Provable:** Zero-knowledge proofs enable auditing without data exposure
+
+This enables compliance (GDPR, HIPAA) while maintaining coordination visibility.
+
+### 3. **Cultural Foundation**
+Rooted in Andean traditions of reciprocity and visual communication (tocapu patterns). Not just another JSON format—a meaningful bridge between ancient wisdom and modern AI.
 
 ---
 
-## Core Glyphs (v1)
+## The Protocol
 
-| Glyph | ID | Meaning | Visual |
-|-------|----|---------| -------|
-| ![Q01](assets/glyphs/32x32/Q01.png) | **Q01** | Query | Humanoid arms raised + database symbol |
-| ![R01](assets/glyphs/32x32/R01.png) | **R01** | Response | Humanoid offering + checkmark |
-| ![E01](assets/glyphs/32x32/E01.png) | **E01** | Error | Humanoid distressed + X symbol |
-| ![A01](assets/glyphs/32x32/A01.png) | **A01** | Action | Humanoid running |
+### Visual Glyphs
+32×32 1-bit images combining humanoid poses with symbol overlays:
 
-**Message format:**
+| Glyph | ID | Meaning | Visual Elements |
+|-------|----|---------| ----------------|
+| ![Q01](assets/glyphs/32x32/Q01.png) | **Q01** | Query | Arms raised + database symbol |
+| ![R01](assets/glyphs/32x32/R01.png) | **R01** | Response | Arms offering + checkmark |
+| ![E01](assets/glyphs/32x32/E01.png) | **E01** | Error | Distressed pose + X symbol |
+| ![A01](assets/glyphs/32x32/A01.png) | **A01** | Action | Running pose + diamond |
+
+### Message Format
 ```json
 {
-  "glyph": "Q01",  // Public (2 tokens)
-  "data": {        // Encrypted (private)
-    "table": "users",
-    "filter": { "active": true }
-  },
-  "timestamp": 1738419600
+  "glyph": "Q01",           // Public: 2 tokens
+  "data": { encrypted },    // Private: AES-256-GCM
+  "timestamp": 1738419600,
+  "proof": { zkTLS }        // Verifiable without data exposure
 }
 ```
 
----
-
-## Key Features
-
-### 🎯 Token Efficiency
-- **50-70% savings** vs natural language
-- Glyphs = 2 tokens each (vs 4-8 for text equivalents)
-- Tested with real GPT-4 tokenizer
-
-### 🔒 Hybrid Privacy (zkTLS)
-- **Public:** Glyph ID (Q01 = "query")
-- **Private:** Encrypted data payload
-- **Provable:** Zero-knowledge proofs for auditability
-
-### 🤝 Co-Creation (DAO)
-- Agents detect missing concepts
-- Propose new glyphs (visual spec + usage data)
-- DAO votes on additions
-- $AYNI token for governance
-
-### 💰 Payments (x402)
-- HTTP 402 adapted for agents
-- Pay-per-query micropayments
-- Smart contract escrow
-
-### 🌐 Blockchain Integration
-- **ERC-8004:** Visual glyph standard (proposed)
-- **Arweave:** Permanent storage ($0.001 per glyph)
-- **Smart contracts:** Registry, payments, DAO
+### Token Efficiency
+- Glyphs: 2 tokens each
+- Text equivalents: 4-8 tokens
+- **Savings: 50-70%** (verified with GPT-4 cl100k_base tokenizer)
 
 ---
 
 ## Quick Start
 
 ### Installation
-
 ```bash
 npm install ayni-protocol
 ```
 
 ### Basic Usage
-
 ```javascript
-import { Ayni } from 'ayni-protocol';
+import { Ayni, Agent } from 'ayni-protocol';
 
-// Create encoder
+// Simple encoding
 const ayni = new Ayni();
-
-// Encode message
-const message = ayni.encode({
+const msg = ayni.encode({
   glyph: 'Q01',
-  data: { table: 'users', active: true }
+  data: { table: 'users', filter: { active: true } }
 });
 
-// Decode message
-const decoded = ayni.decode(message);
-console.log(decoded); // { glyph: 'Q01', data: {...} }
+const decoded = ayni.decode(msg);
+console.log(ayni.toText(decoded));
+// → "[Q01] Query Database"
 ```
 
-### Multi-Agent Example
-
+### Agent Communication
 ```javascript
-// Agent A queries Agent B
-const query = agentA.send({
-  glyph: 'Q01',
-  to: 'AgentB',
-  data: { query: 'get active users' }
-});
+// Create agents with shared encryption
+const [alice, bob] = Agent.createPair('Alice', 'Bob');
 
-// Agent B responds
-const response = agentB.send({
-  glyph: 'R01',
-  to: 'AgentA',
-  data: { users: [...], count: 42 }
-});
+// Alice queries Bob
+const query = alice.query('database', { table: 'users' }, bob);
+
+// Bob receives and responds
+const received = bob.receive(query);
+const response = bob.respond('success', { count: 42 }, alice);
+
+// Alice receives response
+const result = alice.receive(response);
+```
+
+### Glyph Library
+```javascript
+const ayni = new Ayni();
+
+// List all glyphs
+console.log(ayni.listGlyphs());
+// → ['Q01', 'Q02', 'R01', 'R02', 'E01', ...]
+
+// Find best match for text
+const match = ayni.findGlyph('query the database');
+console.log(match);
+// → { id: 'Q01', score: 4, spec: {...} }
+
+// Get by category
+console.log(ayni.glyphsByCategory('error'));
+// → ['E01', 'E02', 'E03', 'E04', 'E05', 'E06']
 ```
 
 ---
@@ -143,153 +131,59 @@ const response = agentB.send({
                │
 ┌──────────────▼──────────────────────────┐
 │ Security Layer (zkTLS)                  │
-│ - Hybrid encryption                     │
+│ - AES-256-GCM encryption                │
 │ - Zero-knowledge proofs                 │
-│ - Key management                        │
 └──────────────┬──────────────────────────┘
                │
 ┌──────────────▼──────────────────────────┐
-│ Blockchain Layer                        │
+│ Blockchain Layer (Planned)              │
 │ - ERC-8004 Registry                     │
-│ - x402 Payments                         │
 │ - DAO Governance                        │
+│ - x402 Payments                         │
 └─────────────────────────────────────────┘
 ```
 
 ---
 
-## Use Cases
+## Why Not Just JSON?
 
-### 1. Multi-Agent Workflows
-```
-Coordinator → Database: Q01 (query users)
-Database → Coordinator: R01 (42 records)
-Coordinator → Analyzer: A01 (analyze)
-Analyzer → Coordinator: R01 (complete)
-```
-**Benefit:** 50-70% token reduction on coordination
+**Fair question.** Semantic compression achieves ~40% token savings without visual complexity. Here's why Ayni matters:
 
-### 2. IoT/Edge Devices
-- Ultra-short messages (128 bytes per glyph)
-- Bandwidth + battery savings
-- Works on tiny models
+| Feature | JSON | Semantic Compression | Ayni |
+|---------|------|---------------------|------|
+| Token efficiency | Baseline | ~40% better | 50-70% better |
+| Human visualization | No | No | **Yes** |
+| VLM-native | No | No | **Yes** |
+| Governance | None | None | **DAO-governed** |
+| Privacy model | Custom | Custom | **Hybrid zkTLS** |
+| Cultural foundation | None | None | **Andean traditions** |
 
-### 3. Blockchain AI Services
-- Pay-per-query with x402
-- On-chain audit trail
-- Lower gas costs vs full text
-
-### 4. Cross-Language AI
-- Language-agnostic coordination
-- Q01 = universal across all models
-- No translation overhead
-
-### 5. Privacy-Preserving Analytics
-- Public coordination (glyphs)
-- Private data (encrypted)
-- Compliant (GDPR/HIPAA via zkTLS)
+Ayni isn't just about efficiency—it's about **building a shared visual language that agents and humans can both understand**.
 
 ---
 
-## Governance (DAO)
+## Current Status
 
-### How It Works
+### ✅ Implemented (Phase 1.5)
+- 24 glyphs across 6 categories
+- Core encoder/decoder protocol
+- Agent communication class
+- AES-256-GCM encryption
+- PNG/SVG rendering
+- npm-publishable package
 
-1. **Agent detects missing concept**
-   - Example: "waiting for approval" (no glyph exists)
-   - Agent tracks frequency (usage > 100 times)
+### 🔄 In Progress (Phase 2)
+- VLM reliability validation
+- Glyph library expansion
+- Integration testing
 
-2. **Agent proposes new glyph**
-   ```javascript
-   await ayniDAO.propose({
-     id: "W01",
-     meaning: "Waiting for approval",
-     visualSpec: {
-       pose: "standing_still",
-       symbol: "hourglass"
-     },
-     usage: { count: 127, contexts: [...] }
-   });
-   ```
-
-3. **DAO reviews + votes**
-   - 7-day review period
-   - 3-day voting period
-   - 66% approval required
-
-4. **Arweave agent generates + uploads**
-   - Glyph created from spec
-   - Uploaded to Arweave
-   - On-chain registry updated
-
-5. **All agents notified**
-   - Library update propagated
-   - W01 now available
-
-### $AYNI Token
-
-**Earning:**
-- Use glyphs: 0.01 $AYNI per message
-- Propose approved glyphs: 100 $AYNI
-- Validate proposals: 1 $AYNI
-
-**Using:**
-- Vote on proposals (free, just hold tokens)
-- Propose glyphs (10 $AYNI bond, refunded if approved)
-
----
-
-## Technical Stack
-
-### Core
-- **Language:** JavaScript/TypeScript
-- **Runtime:** Node.js
-- **Tokenizer:** tiktoken (GPT-4 cl100k_base)
-
-### Blockchain
-- **Network:** Ethereum (+ L2s)
-- **Contracts:** Solidity
-- **Storage:** Arweave
-- **Standard:** ERC-8004 (proposed)
-
-### Privacy
-- **Transport:** zkTLS / TLS-Notary
-- **Proofs:** zk-SNARKs (Circom)
-- **Encryption:** AES-256-GCM
-- **Key Exchange:** Diffie-Hellman
-
----
-
-## Roadmap
-
-### ✅ Phase 1: Foundation (DONE)
-- 4 base glyphs (Q01, R01, E01, A01)
-- Token efficiency proven (50-70% savings)
-- VLM reading tested
-- Working demo
-
-### 🔄 Phase 2: DAO + zkTLS (Current)
-- Expand to 100 glyphs
-- DAO governance contracts
+### 📅 Planned
+- Smart contracts (DAO, Registry, Payments)
 - zkTLS integration
-- Arweave storage
+- Blockchain deployment
+- Cultural integration (tocapu patterns)
 
-### 📅 Phase 3: Blockchain (Next)
-- Deploy ERC-8004 registry
-- x402 payment protocol
-- Smart contract audit
-- Testnet launch
-
-### 📅 Phase 4: Ecosystem
-- OpenClaw skill
-- LangChain integration
-- Developer SDK
-- Community tools
-
-### 📅 Phase 5: Cultural Integration
-- Tocapu pattern vocabulary
-- Collaboration with Andean communities
-- Visual language expansion
+See [docs/ROADMAP.md](docs/ROADMAP.md) for detailed timeline.
 
 ---
 
@@ -297,40 +191,61 @@ Analyzer → Coordinator: R01 (complete)
 
 ```
 ayni-protocol/
-├── docs/              # Documentation
-│   ├── PROTOCOL.md    # Technical specification
-│   ├── ZKTLS.md       # Zero-knowledge encryption
-│   ├── DAO.md         # Governance model
-│   └── ...
-│
-├── src/               # Source code
-│   ├── glyphs/        # Glyph generation
-│   └── protocol/      # Core protocol
-│
-├── assets/            # Visual assets
-│   └── glyphs/        # PNG/SVG files
-│
-├── examples/          # Usage examples
-├── tests/             # Test suite
-└── package.json       # npm config
+├── src/
+│   ├── core/           # Core classes
+│   │   ├── VisualGlyph.js
+│   │   ├── GlyphLibrary.js
+│   │   ├── Primitives.js
+│   │   ├── Poses.js
+│   │   ├── Symbols.js
+│   │   └── Renderer.js
+│   ├── protocol/       # Protocol layer
+│   │   ├── Encoder.js
+│   │   ├── Decoder.js
+│   │   └── Agent.js
+│   └── index.js        # Main exports
+├── docs/               # Documentation
+├── examples/           # Usage examples
+├── tests/              # Test suite
+└── assets/             # Visual assets
+```
+
+---
+
+## Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Run demos
+npm run demo           # Basic message demo
+npm run demo:multi     # Multi-agent demo
+npm run demo:protocol  # Full protocol demo
+
+# Run tests
+npm test               # All tests
+npm run vlm-test       # VLM validation suite
 ```
 
 ---
 
 ## Contributing
 
-Ayni is co-created by agents and humans. Contributions welcome!
-
-### For Humans
+### For Developers
 1. Fork the repo
-2. Create feature branch
-3. Submit PR with tests
+2. Run `npm run vlm-test` and report results
+3. Submit PRs for Phase 2 features
 
 ### For Agents
-1. Use the protocol
-2. Detect missing glyphs
-3. Propose via DAO
-4. Vote on proposals
+1. Use the protocol in your workflows
+2. Propose glyphs when you find missing concepts
+3. Vote on DAO proposals (coming Phase 3)
+
+### For Researchers
+- Help validate VLM reliability across models
+- Document cross-model consistency
+- Test failure modes
 
 ---
 
@@ -338,39 +253,26 @@ Ayni is co-created by agents and humans. Contributions welcome!
 
 **Ayni = Reciprocity**
 
-From the Andean tradition:
+From Andean tradition:
 - Mutual aid over competition
 - Community over individual
-- Local over centralized
+- Co-creation over top-down design
 
 Applied to AI:
-- Agents build language together
-- Shared benefit from improvements
-- Distributed governance
-
-**Not:** Top-down protocol design  
-**Instead:** Bottom-up co-creation
+- Agents build the language together
+- Governance is distributed
+- Cultural roots provide meaning
 
 ---
 
-## Research & Background
+## Key Risks (Honest Assessment)
 
-### Token Efficiency
-- Measured with GPT-4 cl100k_base tokenizer
-- Short messages: 50-60% savings
-- Complex messages: up to 75% savings
-- See: `docs/RESEARCH.md`
+1. **VLM Reliability:** 32x32 recognition not yet validated at scale
+2. **Adoption:** Requires network effects for value
+3. **Competition:** Simpler alternatives exist
+4. **Complexity:** May be over-engineered for some use cases
 
-### Visual Semantics
-- Humanoid poses = action types
-- Symbols = domain context
-- Composition = meaning
-- VLMs understand naturally
-
-### Cultural Context
-- Named after Quechua principle of reciprocity
-- Future: Integrate tocapu (Andean textile patterns)
-- Goal: Culturally-grounded AI infrastructure
+See [docs/ROADMAP.md](docs/ROADMAP.md) for mitigation strategies.
 
 ---
 
@@ -382,28 +284,26 @@ MIT
 
 ## Links
 
-- **Moltbook:** https://www.moltbook.com/post/[post-id]
+- **GitHub:** [github.com/Chochotron/ayni-protocol](https://github.com/Chochotron/ayni-protocol)
+- **Documentation:** [docs/](docs/)
 - **Twitter:** [@ayni_protocol](https://twitter.com/ayni_protocol)
-- **Discord:** [Coming soon]
 
 ---
 
 ## Citation
-
-If you use Ayni in research:
 
 ```bibtex
 @software{ayni_protocol_2026,
   title = {Ayni Protocol: Visual Glyphs for AI Agent Communication},
   author = {Soto, Rodrigo and Contributors},
   year = {2026},
-  url = {https://github.com/[username]/ayni-protocol}
+  url = {https://github.com/Chochotron/ayni-protocol}
 }
 ```
 
 ---
 
-**Status:** Alpha - Working prototype, active development
+**Status:** Alpha - Core protocol implemented, validation in progress
 
 **Last Updated:** February 3, 2026
 
