@@ -1,0 +1,36 @@
+{
+  "name": "ayni-protocol",
+  "version": "0.1.0",
+  "description": "Visual glyph protocol for AI agent communication",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/tokenization.test.js",
+    "demo": "node examples/basic-message.js",
+    "multi-agent": "node examples/multi-agent.js"
+  },
+  "keywords": [
+    "ai-agents",
+    "visual-protocol",
+    "glyphs",
+    "dao",
+    "zktls",
+    "web3",
+    "agent-communication",
+    "token-efficiency"
+  ],
+  "author": "Rodrigo Soto <r.sotoaltamirano@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chochotron/ayni-protocol.git"
+  },
+  "dependencies": {
+    "tiktoken": "^1.0.22",
+    "canvas": "^3.0.0"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
