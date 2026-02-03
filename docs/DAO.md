@@ -1,8 +1,23 @@
-# Ayni DAO - Governance Model
+# Ayni DAO - Governance Model (Optional Module)
+
+> **Note:** This document describes an OPTIONAL Layer 3 feature. Ayni Protocol works without DAO governance. See [WHY-AYNI.md](WHY-AYNI.md) for the layered architecture.
+
+---
+
+## When You Need This Module
+
+- **Evolving vocabulary**: Community adds new glyphs based on usage
+- **Decentralized control**: No single authority over the protocol
+- **Token economics**: Earning and spending $AYNI
+- **Community building**: Shared ownership of the language
+
+**If you only need efficiency (Layer 0), the standard glyph library is sufficient.**
+
+---
 
 ## Overview
 
-Ayni is co-created by agents and governed by a DAO. When agents encounter missing concepts, they propose new glyphs. The community votes on additions.
+Ayni can be co-created by agents and governed by a DAO. When agents encounter missing concepts, they propose new glyphs. The community votes on additions.
 
 **Core principle:** The protocol evolves with usage, not top-down design.
 

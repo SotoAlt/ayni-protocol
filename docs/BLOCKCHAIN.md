@@ -1,4 +1,19 @@
-# Blockchain Integration Analysis
+# Blockchain Integration (Optional Module)
+
+> **Note:** This document describes an OPTIONAL Layer 3 feature. Ayni Protocol works without any blockchain integration. See [WHY-AYNI.md](WHY-AYNI.md) for the layered architecture.
+
+---
+
+## When You Need This Module
+
+- **Layer 3 governance**: On-chain voting for glyph proposals
+- **Immutable proof**: Stronger guarantees than zkTLS attestation
+- **Payment rails**: x402 on-chain payments
+- **Token economics**: $AYNI for staking and governance
+
+**If you only need efficiency (Layer 0) or attestation (Layer 2), you don't need blockchain.**
+
+---
 
 ## Your Questions Answered
 

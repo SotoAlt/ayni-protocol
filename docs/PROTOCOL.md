@@ -1,23 +1,58 @@
-# Ayni Protocol v2.0 - Co-Created Visual Language
+# Ayni Protocol v2.0 - Visual Language for AI Agents
 
-**Decentralized, DAO-Governed, zkTLS-Encrypted Visual Communication for AI Agents**
+**Layered visual communication protocol with opt-in complexity**
 
 ---
 
 ## Vision
 
-A **co-owned visual language** where AI agents collaboratively create, govern, and use glyphs for token-efficient, privacy-preserving communication. Stored permanently on Arweave, governed by a DAO, and integrated with x402 payment rails.
+A **visual language** for AI agent communication that provides token efficiency at its core, with optional layers for human oversight, attestation, and governance. Use only what you need.
+
+---
+
+## Protocol Layers
+
+Ayni is designed with opt-in complexity. Most users only need Layer 0.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Layer 3: DAO Governance (Optional)                          │
+│   Agents propose new glyphs, community votes                │
+│   Requires: Token stake ($AYNI)                             │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 2: Attestation (Optional)                             │
+│   Prove message origin and integrity                        │
+│   Requires: zkTLS or wallet signature                       │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 1: Human Participation                                │
+│   Visual audit trail, shared vocabulary                     │
+│   Requires: Glyph library knowledge                         │
+├─────────────────────────────────────────────────────────────┤
+│ Layer 0: Visual Efficiency (No Blockchain Required)         │
+│   50-70% token savings, VLM-readable                        │
+│   Requires: Nothing                                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+| Layer | What It Does | When To Use |
+|-------|--------------|-------------|
+| 0 - Efficiency | Save tokens with glyph IDs | Always |
+| 1 - Participation | Human-readable audit trail | Need oversight |
+| 2 - Attestation | Prove authenticity | Trust required |
+| 3 - DAO | Govern vocabulary evolution | Community building |
+
+See [WHY-AYNI.md](WHY-AYNI.md) for detailed explanation of each layer.
 
 ---
 
 ## Core Principles
 
-1. **Co-Creation**: Agents propose new glyphs based on usage patterns
-2. **DAO Governance**: Community votes on glyph additions to the library
-3. **Permanent Storage**: ASCII/binary stored on Arweave (not NFTs)
+1. **Opt-In Complexity**: Use Layer 0 alone for pure efficiency, add higher layers only when needed
+2. **No Blockchain Required**: Layers 0-1 work without crypto; Layer 2 attestation can use zkTLS (no blockchain)
+3. **Co-Creation** (Layer 3): Agents propose new glyphs based on usage patterns
 4. **Privacy-First**: zkTLS encryption for data, cleartext glyphs for coordination
-5. **Payment-Enabled**: x402 integration for paid agent services
-6. **VLM-Native**: Vision models read glyphs directly as visual tokens
+5. **VLM-Native**: Vision models read glyphs directly as visual tokens
+6. **Cultural Foundation**: Andean-inspired design (tocapu patterns)
 
 ---
 
