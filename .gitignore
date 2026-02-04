@@ -60,11 +60,17 @@ __pycache__/
 venv/
 env/
 
-# Smart contracts (if we add)
+# Smart contracts / Foundry
 artifacts/
 cache/
 typechain/
 deployments/localhost/
+hackathon/contracts/out/
+hackathon/contracts/cache/
+
+# Claude Code
+.claude/
+**/CLAUDE.md
 
 # Secrets
 *.key

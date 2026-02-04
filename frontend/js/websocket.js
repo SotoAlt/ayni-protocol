@@ -1,132 +1,248 @@
 /**
- * MockWebSocket - Simulates agent communication for demo
+ * MockWebSocket - Visual Storytelling Communication v2
  *
- * Generates realistic multi-agent conversations with
- * various glyph types and patterns.
+ * Generates multi-glyph messages that combine humanoid figures,
+ * creatures, machines, and symbols to tell visual stories.
+ * Messages use 1-4 glyphs like hieroglyphics or comic panels.
  */
 
-// Agent definitions
+import { GLYPH_COMBOS, GLYPH_MEANINGS, GLYPH_CATEGORIES } from './glyphs.js';
+
+// Agent definitions with roles and visual identities
 const AGENTS = [
-  { id: 'Alice', role: 'coordinator', color: '#00d9ff' },
-  { id: 'Bob', role: 'database', color: '#00ff41' },
-  { id: 'Carol', role: 'analyzer', color: '#ffcc00' },
-  { id: 'Dave', role: 'payment', color: '#9d4edd' },
-  { id: 'Eve', role: 'validator', color: '#ff006e' }
+  { id: 'Alice', role: 'coordinator', figure: 'thinking' },
+  { id: 'Bob', role: 'database', figure: 'waiting' },
+  { id: 'Carol', role: 'analyzer', figure: 'thinking' },
+  { id: 'Dave', role: 'payment', figure: 'running' },
+  { id: 'Eve', role: 'validator', figure: 'asking' },
+  { id: 'Claude', role: 'assistant', figure: 'terminal' }
 ];
 
-// Glyph definitions by category
-const GLYPHS = {
-  query: ['Q01', 'Q02', 'Q03', 'Q04'],
-  response: ['R01', 'R02', 'R03', 'R04'],
-  error: ['E01', 'E02', 'E03', 'E04', 'E05', 'E06'],
-  action: ['A01', 'A02', 'A03', 'A04', 'A05'],
-  state: ['S01', 'S02', 'S03', 'S04'],
-  payment: ['P01', 'P02', 'P03']
+// Pre-defined glyph combinations for semantic messages
+const MESSAGE_COMBOS = {
+  // Query combinations (1-3 glyphs)
+  'query-db': ['asking', 'database'],
+  'query-db-secure': ['asking', 'database', 'lock'],
+  'query-api': ['asking', 'server'],
+  'query-network': ['asking', 'spider'],
+  'search': ['asking', 'eye'],
+  'search-data': ['asking', 'eye', 'database'],
+
+  // Response combinations
+  'success': ['giving', 'checkmark'],
+  'success-data': ['giving', 'database', 'checkmark'],
+  'data-response': ['giving', 'database'],
+  'cached-response': ['giving', 'clock', 'checkmark'],
+
+  // Error combinations
+  'error': ['waiting', 'x'],
+  'error-timeout': ['waiting', 'clock', 'x'],
+  'error-permission': ['waiting', 'lock', 'x'],
+  'error-notfound': ['asking', 'eye', 'x'],
+
+  // Action combinations
+  'execute': ['running', 'lightning'],
+  'execute-secure': ['running', 'lightning', 'lock'],
+  'update': ['running', 'database', 'arrow'],
+  'delete': ['running', 'database', 'x'],
+  'create': ['giving', 'database', 'checkmark'],
+  'broadcast': ['running', 'antenna'],
+  'delegate': ['giving', 'robot'],
+
+  // Payment combinations
+  'payment-send': ['running', 'coin'],
+  'payment-confirm': ['celebrating', 'coin', 'checkmark'],
+  'payment-fail': ['waiting', 'coin', 'x'],
+  'payment-request': ['asking', 'coin'],
+
+  // State combinations
+  'processing': ['thinking', 'clock'],
+  'idle': ['waiting'],
+  'complete': ['celebrating', 'checkmark'],
+  'watching': ['cat', 'eye'],
+
+  // Agent-to-agent combinations
+  'agent-query': ['robot', 'asking', 'database'],
+  'agent-response': ['terminal', 'giving', 'checkmark'],
+  'agent-error': ['robot', 'waiting', 'x'],
+  'agent-delegate': ['robot', 'arrow', 'robot'],
+
+  // Network/data flow combinations
+  'send-message': ['bird', 'arrow'],
+  'receive-message': ['bird', 'giving'],
+  'network-request': ['spider', 'asking'],
+  'data-stream': ['fish', 'arrow', 'database'],
+  'sync': ['drone', 'arrow', 'server'],
+
+  // Security combinations
+  'encrypt': ['lock', 'checkmark'],
+  'decrypt': ['lock', 'giving'],
+  'authenticate': ['asking', 'lock', 'checkmark'],
+  'secure-channel': ['snake', 'lock']
 };
 
-// Message meanings
-const MEANINGS = {
-  Q01: 'Query Database',
-  Q02: 'Query API',
-  Q03: 'Search',
-  Q04: 'Filtered Query',
-  R01: 'Success',
-  R02: 'Data Response',
-  R03: 'Empty Result',
-  R04: 'Cached Response',
-  E01: 'General Error',
-  E02: 'Payment Required',
-  E03: 'Permission Denied',
-  E04: 'Not Found',
-  E05: 'Timeout',
-  E06: 'Rate Limited',
-  A01: 'Execute',
-  A02: 'Update',
-  A03: 'Delete',
-  A04: 'Create',
-  A05: 'Retry',
-  S01: 'Idle',
-  S02: 'Processing',
-  S03: 'Waiting',
-  S04: 'Complete',
-  P01: 'Payment Sent',
-  P02: 'Payment Confirmed',
-  P03: 'Refund'
-};
+// Get meaning for a glyph combo
+function getComboMeaning(glyphs) {
+  // Check if it's a known combo
+  for (const [name, combo] of Object.entries(MESSAGE_COMBOS)) {
+    if (JSON.stringify(combo) === JSON.stringify(glyphs)) {
+      return name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+  }
 
-// Conversation scenarios
+  // Build meaning from individual glyphs
+  return glyphs.map(g => GLYPH_MEANINGS[g] || g).join(' + ');
+}
+
+// Conversation scenarios using visual storytelling
 const SCENARIOS = [
-  // Database query flow
+  // Database query flow - visual story
   {
     name: 'database-query',
     steps: [
-      { from: 'Alice', to: 'Bob', glyph: 'Q01', delay: 100 },
-      { from: 'Bob', to: 'Alice', glyph: 'S02', delay: 300 },
-      { from: 'Bob', to: 'Alice', glyph: 'R02', delay: 800 }
+      { from: 'Alice', to: 'Bob', glyphs: ['asking', 'database'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['thinking', 'clock'], delay: 300 },
+      { from: 'Bob', to: 'Alice', glyphs: ['giving', 'database', 'checkmark'], delay: 800 }
     ]
   },
-  // Search with analysis
+
+  // Encrypted search
   {
-    name: 'search-analyze',
+    name: 'secure-search',
     steps: [
-      { from: 'Alice', to: 'Bob', glyph: 'Q03', delay: 100 },
-      { from: 'Bob', to: 'Alice', glyph: 'R02', delay: 500 },
-      { from: 'Alice', to: 'Carol', glyph: 'A01', delay: 200 },
-      { from: 'Carol', to: 'Alice', glyph: 'S02', delay: 100 },
-      { from: 'Carol', to: 'Alice', glyph: 'R01', delay: 1200 }
+      { from: 'Alice', to: 'Bob', glyphs: ['asking', 'eye', 'lock'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['thinking'], delay: 400 },
+      { from: 'Bob', to: 'Alice', glyphs: ['giving', 'checkmark'], delay: 600 }
     ]
   },
-  // Payment flow
+
+  // Multi-agent analysis workflow
   {
-    name: 'payment',
+    name: 'analysis-workflow',
     steps: [
-      { from: 'Alice', to: 'Dave', glyph: 'P01', delay: 100 },
-      { from: 'Dave', to: 'Eve', glyph: 'Q04', delay: 300 },
-      { from: 'Eve', to: 'Dave', glyph: 'R01', delay: 400 },
-      { from: 'Dave', to: 'Alice', glyph: 'P02', delay: 200 }
+      { from: 'Alice', to: 'Bob', glyphs: ['asking', 'database'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['giving', 'database'], delay: 500 },
+      { from: 'Alice', to: 'Carol', glyphs: ['giving', 'robot'], delay: 200 },
+      { from: 'Carol', to: 'Alice', glyphs: ['thinking', 'clock'], delay: 100 },
+      { from: 'Carol', to: 'Alice', glyphs: ['celebrating', 'checkmark'], delay: 1200 }
     ]
   },
-  // Error scenario
+
+  // Payment flow with confirmation
+  {
+    name: 'payment-flow',
+    steps: [
+      { from: 'Alice', to: 'Dave', glyphs: ['running', 'coin'], delay: 100 },
+      { from: 'Dave', to: 'Eve', glyphs: ['asking', 'lock'], delay: 300 },
+      { from: 'Eve', to: 'Dave', glyphs: ['giving', 'checkmark'], delay: 400 },
+      { from: 'Dave', to: 'Alice', glyphs: ['celebrating', 'coin', 'checkmark'], delay: 200 }
+    ]
+  },
+
+  // Timeout error and retry
   {
     name: 'error-retry',
     steps: [
-      { from: 'Alice', to: 'Bob', glyph: 'Q02', delay: 100 },
-      { from: 'Bob', to: 'Alice', glyph: 'E05', delay: 2000 },
-      { from: 'Alice', to: 'Bob', glyph: 'A05', delay: 500 },
-      { from: 'Bob', to: 'Alice', glyph: 'R01', delay: 800 }
+      { from: 'Alice', to: 'Bob', glyphs: ['asking', 'server'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['waiting', 'clock', 'x'], delay: 2000 },
+      { from: 'Alice', to: 'Bob', glyphs: ['running', 'lightning'], delay: 500 },
+      { from: 'Bob', to: 'Alice', glyphs: ['giving', 'checkmark'], delay: 800 }
     ]
   },
-  // Permission denied
+
+  // Permission denied flow
   {
     name: 'permission-denied',
     steps: [
-      { from: 'Carol', to: 'Bob', glyph: 'Q01', delay: 100 },
-      { from: 'Bob', to: 'Carol', glyph: 'E03', delay: 300 },
-      { from: 'Carol', to: 'Alice', glyph: 'Q04', delay: 200 },
-      { from: 'Alice', to: 'Bob', glyph: 'A02', delay: 100 },
-      { from: 'Bob', to: 'Alice', glyph: 'R01', delay: 400 },
-      { from: 'Carol', to: 'Bob', glyph: 'Q01', delay: 100 },
-      { from: 'Bob', to: 'Carol', glyph: 'R02', delay: 500 }
+      { from: 'Carol', to: 'Bob', glyphs: ['asking', 'database'], delay: 100 },
+      { from: 'Bob', to: 'Carol', glyphs: ['waiting', 'lock', 'x'], delay: 300 },
+      { from: 'Carol', to: 'Alice', glyphs: ['asking', 'lock'], delay: 200 },
+      { from: 'Alice', to: 'Bob', glyphs: ['giving', 'lock', 'checkmark'], delay: 100 },
+      { from: 'Carol', to: 'Bob', glyphs: ['asking', 'database'], delay: 100 },
+      { from: 'Bob', to: 'Carol', glyphs: ['giving', 'database', 'checkmark'], delay: 500 }
     ]
   },
-  // Multi-agent coordination
+
+  // Network coordination with multiple agents
   {
-    name: 'coordination',
+    name: 'network-coordination',
     steps: [
-      { from: 'Alice', to: 'Bob', glyph: 'Q01', delay: 100 },
-      { from: 'Alice', to: 'Carol', glyph: 'Q02', delay: 50 },
-      { from: 'Alice', to: 'Dave', glyph: 'Q04', delay: 50 },
-      { from: 'Bob', to: 'Alice', glyph: 'R02', delay: 600 },
-      { from: 'Carol', to: 'Alice', glyph: 'R02', delay: 800 },
-      { from: 'Dave', to: 'Alice', glyph: 'R01', delay: 400 },
-      { from: 'Alice', to: 'Eve', glyph: 'A01', delay: 100 },
-      { from: 'Eve', to: 'Alice', glyph: 'R01', delay: 500 }
+      { from: 'Alice', to: 'Bob', glyphs: ['asking', 'database'], delay: 100 },
+      { from: 'Alice', to: 'Carol', glyphs: ['asking', 'server'], delay: 50 },
+      { from: 'Alice', to: 'Dave', glyphs: ['asking', 'coin'], delay: 50 },
+      { from: 'Bob', to: 'Alice', glyphs: ['giving', 'database'], delay: 600 },
+      { from: 'Carol', to: 'Alice', glyphs: ['giving', 'checkmark'], delay: 800 },
+      { from: 'Dave', to: 'Alice', glyphs: ['giving', 'coin', 'checkmark'], delay: 400 },
+      { from: 'Alice', to: 'Eve', glyphs: ['running', 'lightning'], delay: 100 },
+      { from: 'Eve', to: 'Alice', glyphs: ['celebrating', 'checkmark'], delay: 500 }
+    ]
+  },
+
+  // AI assistant helping user
+  {
+    name: 'assistant-help',
+    steps: [
+      { from: 'Alice', to: 'Claude', glyphs: ['asking'], delay: 100 },
+      { from: 'Claude', to: 'Alice', glyphs: ['terminal', 'thinking'], delay: 200 },
+      { from: 'Claude', to: 'Bob', glyphs: ['asking', 'database'], delay: 150 },
+      { from: 'Bob', to: 'Claude', glyphs: ['giving', 'database'], delay: 400 },
+      { from: 'Claude', to: 'Alice', glyphs: ['terminal', 'giving', 'checkmark'], delay: 300 }
+    ]
+  },
+
+  // Data streaming workflow
+  {
+    name: 'data-stream',
+    steps: [
+      { from: 'Alice', to: 'Bob', glyphs: ['fish', 'arrow', 'database'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['thinking', 'clock'], delay: 200 },
+      { from: 'Bob', to: 'Alice', glyphs: ['fish', 'arrow'], delay: 300 },
+      { from: 'Bob', to: 'Alice', glyphs: ['fish', 'arrow'], delay: 300 },
+      { from: 'Bob', to: 'Alice', glyphs: ['fish', 'checkmark'], delay: 300 }
+    ]
+  },
+
+  // Monitoring and alerts
+  {
+    name: 'monitoring',
+    steps: [
+      { from: 'Eve', to: 'Bob', glyphs: ['cat', 'eye'], delay: 100 },
+      { from: 'Bob', to: 'Eve', glyphs: ['heart', 'checkmark'], delay: 500 },
+      { from: 'Eve', to: 'Carol', glyphs: ['cat', 'eye'], delay: 100 },
+      { from: 'Carol', to: 'Eve', glyphs: ['heart', 'checkmark'], delay: 400 },
+      { from: 'Eve', to: 'Alice', glyphs: ['giving', 'heart', 'checkmark'], delay: 200 }
+    ]
+  },
+
+  // Broadcast message
+  {
+    name: 'broadcast',
+    steps: [
+      { from: 'Alice', to: 'Bob', glyphs: ['antenna', 'arrow'], delay: 50 },
+      { from: 'Alice', to: 'Carol', glyphs: ['antenna', 'arrow'], delay: 50 },
+      { from: 'Alice', to: 'Dave', glyphs: ['antenna', 'arrow'], delay: 50 },
+      { from: 'Alice', to: 'Eve', glyphs: ['antenna', 'arrow'], delay: 50 },
+      { from: 'Bob', to: 'Alice', glyphs: ['checkmark'], delay: 300 },
+      { from: 'Carol', to: 'Alice', glyphs: ['checkmark'], delay: 400 },
+      { from: 'Dave', to: 'Alice', glyphs: ['checkmark'], delay: 350 },
+      { from: 'Eve', to: 'Alice', glyphs: ['checkmark'], delay: 450 }
+    ]
+  },
+
+  // Drone scouting
+  {
+    name: 'drone-scout',
+    steps: [
+      { from: 'Alice', to: 'Eve', glyphs: ['drone', 'eye'], delay: 100 },
+      { from: 'Eve', to: 'Alice', glyphs: ['drone', 'arrow', 'server'], delay: 800 },
+      { from: 'Eve', to: 'Alice', glyphs: ['giving', 'database'], delay: 400 },
+      { from: 'Alice', to: 'Eve', glyphs: ['celebrating', 'checkmark'], delay: 200 }
     ]
   }
 ];
 
 /**
- * MockWebSocket class - simulates real-time message stream
+ * MockWebSocket class - simulates visual storytelling message stream
  */
 export class MockWebSocket {
   constructor(options = {}) {
@@ -148,8 +264,10 @@ export class MockWebSocket {
    * Start the mock connection
    */
   connect() {
+    console.log('MockWebSocket.connect() called');
     this.isRunning = true;
     this.onConnect();
+    console.log('Calling runNextScenario...');
     this.runNextScenario();
   }
 
@@ -175,11 +293,12 @@ export class MockWebSocket {
         clearTimeout(this.timeoutId);
         this.timeoutId = null;
       }
+      return false;
     } else {
       this.isRunning = true;
       this.runNextStep();
+      return true;
     }
-    return this.isRunning;
   }
 
   /**
@@ -193,10 +312,12 @@ export class MockWebSocket {
    * Run next scenario
    */
   runNextScenario() {
+    console.log('runNextScenario called, isRunning:', this.isRunning);
     if (!this.isRunning) return;
 
     // Pick random scenario
     this.currentScenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
+    console.log('Selected scenario:', this.currentScenario.name);
     this.stepIndex = 0;
     this.runNextStep();
   }
@@ -227,27 +348,32 @@ export class MockWebSocket {
   }
 
   /**
-   * Emit a message
+   * Emit a message with visual glyphs
    */
   emitMessage(step) {
-    // Determine category from glyph ID
-    const category = this.getCategoryFromGlyph(step.glyph);
+    const glyphs = step.glyphs || [step.glyph];
 
-    // Generate payload data
-    const data = this.generatePayload(step.glyph, category);
+    // Determine primary category from first glyph
+    const category = this.getCategoryFromGlyph(glyphs[0]);
+
+    // Calculate byte size (64x64 = 512 bytes per glyph)
+    const size = glyphs.length * 512;
+
+    // Get meaning
+    const meaning = getComboMeaning(glyphs);
 
     // Create message
     const message = {
       id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       from: step.from,
       to: step.to,
-      glyph: step.glyph,
+      glyphs: glyphs,
+      glyph: glyphs[0], // Backward compatibility
       category: category,
-      meaning: MEANINGS[step.glyph] || step.glyph,
+      meaning: meaning,
       timestamp: Date.now(),
       encrypted: Math.random() > 0.3,
-      data: data,
-      size: 128 // 32x32 / 8 = 128 bytes
+      size: size
     };
 
     this.messageCount++;
@@ -260,6 +386,14 @@ export class MockWebSocket {
    * Get category from glyph ID
    */
   getCategoryFromGlyph(glyphId) {
+    // Check new glyph categories
+    for (const [category, glyphs] of Object.entries(GLYPH_CATEGORIES)) {
+      if (glyphs.includes(glyphId)) {
+        return category;
+      }
+    }
+
+    // Fallback for legacy glyph IDs
     const prefix = glyphId[0];
     const categories = {
       'Q': 'query',
@@ -269,56 +403,25 @@ export class MockWebSocket {
       'S': 'state',
       'P': 'payment'
     };
-    return categories[prefix] || 'query';
+    return categories[prefix] || 'symbol';
   }
 
   /**
-   * Generate realistic payload data
+   * Send a custom message with glyph combination
    */
-  generatePayload(glyphId, category) {
-    const payloads = {
-      query: () => ({
-        table: ['users', 'orders', 'products', 'sessions'][Math.floor(Math.random() * 4)],
-        filter: { active: true },
-        limit: Math.floor(Math.random() * 100) + 10
-      }),
-      response: () => ({
-        count: Math.floor(Math.random() * 1000),
-        cached: Math.random() > 0.7,
-        took_ms: Math.floor(Math.random() * 500)
-      }),
-      error: () => ({
-        code: [400, 401, 403, 404, 429, 500, 503][Math.floor(Math.random() * 7)],
-        message: ['Invalid request', 'Unauthorized', 'Forbidden', 'Not found', 'Rate limited', 'Server error', 'Service unavailable'][Math.floor(Math.random() * 7)],
-        retry_after: Math.floor(Math.random() * 60)
-      }),
-      action: () => ({
-        action: ['execute', 'update', 'delete', 'create', 'retry'][Math.floor(Math.random() * 5)],
-        target: `resource-${Math.floor(Math.random() * 1000)}`,
-        priority: ['low', 'normal', 'high'][Math.floor(Math.random() * 3)]
-      }),
-      state: () => ({
-        state: ['idle', 'processing', 'waiting', 'complete'][Math.floor(Math.random() * 4)],
-        progress: Math.floor(Math.random() * 100),
-        eta_seconds: Math.floor(Math.random() * 300)
-      }),
-      payment: () => ({
-        amount: (Math.random() * 100).toFixed(4),
-        currency: 'USDC',
-        tx_hash: `0x${Math.random().toString(16).substr(2, 64)}`,
-        confirmed: Math.random() > 0.5
-      })
-    };
-
-    return payloads[category] ? payloads[category]() : {};
+  send(from, to, glyphs) {
+    const glyphArray = Array.isArray(glyphs) ? glyphs : [glyphs];
+    this.emitMessage({ from, to, glyphs: glyphArray });
   }
 
   /**
-   * Send a custom message
+   * Send a predefined combo message
    */
-  send(from, to, glyphId) {
-    const category = this.getCategoryFromGlyph(glyphId);
-    this.emitMessage({ from, to, glyph: glyphId });
+  sendCombo(from, to, comboName) {
+    const glyphs = MESSAGE_COMBOS[comboName];
+    if (glyphs) {
+      this.emitMessage({ from, to, glyphs });
+    }
   }
 
   /**
@@ -342,4 +445,6 @@ export class MockWebSocket {
   }
 }
 
+// Export combo definitions for reference
+export { MESSAGE_COMBOS, AGENTS, SCENARIOS };
 export default MockWebSocket;

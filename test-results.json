@@ -1,0 +1,194 @@
+{
+  "timestamp": "2026-02-04T00:11:34.035Z",
+  "totalTests": 18,
+  "formats": [
+    {
+      "format": "Descriptive (ETIMEOUT)",
+      "avgSavings": 60,
+      "avgTokens": 2,
+      "range": "60%-60%"
+    },
+    {
+      "format": "Short numeric (Q01)",
+      "avgSavings": 59,
+      "avgTokens": 2,
+      "range": "50%-75%"
+    },
+    {
+      "format": "Short semantic (QDB)",
+      "avgSavings": 50,
+      "avgTokens": 2,
+      "range": "50%-50%"
+    },
+    {
+      "format": "Lowercase (qdb)",
+      "avgSavings": 50,
+      "avgTokens": 2,
+      "range": "50%-50%"
+    },
+    {
+      "format": "CamelCase (QueryDB)",
+      "avgSavings": 49,
+      "avgTokens": 3,
+      "range": "38%-60%"
+    },
+    {
+      "format": "Underscore (Q_DB)",
+      "avgSavings": 47,
+      "avgTokens": 3,
+      "range": "25%-63%"
+    }
+  ],
+  "winner": {
+    "format": "Descriptive (ETIMEOUT)",
+    "avgSavings": 60,
+    "avgTokens": 2,
+    "range": "60%-60%"
+  },
+  "allResults": [
+    {
+      "text": "Query database for users",
+      "glyphId": "Q01",
+      "desc": "Short numeric",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Query database for users",
+      "glyphId": "QDB",
+      "desc": "Short semantic",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Query database for users",
+      "glyphId": "Q_DB",
+      "desc": "Underscore",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Query database for users",
+      "glyphId": "QueryDB",
+      "desc": "CamelCase",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Query database for users",
+      "glyphId": "qdb",
+      "desc": "Lowercase",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Query database for users",
+      "glyphId": "query-db",
+      "desc": "Hyphen",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Found 42 records",
+      "glyphId": "R02",
+      "desc": "Short numeric",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Found 42 records",
+      "glyphId": "R_42",
+      "desc": "With data",
+      "textTokens": 4,
+      "glyphTokens": 3,
+      "savings": 25
+    },
+    {
+      "text": "Found 42 records",
+      "glyphId": "RES42",
+      "desc": "Compact",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Found 42 records",
+      "glyphId": "Found42",
+      "desc": "Natural",
+      "textTokens": 4,
+      "glyphTokens": 2,
+      "savings": 50
+    },
+    {
+      "text": "Error: operation timed out",
+      "glyphId": "E01",
+      "desc": "Short numeric",
+      "textTokens": 5,
+      "glyphTokens": 2,
+      "savings": 60
+    },
+    {
+      "text": "Error: operation timed out",
+      "glyphId": "ETIMEOUT",
+      "desc": "Descriptive",
+      "textTokens": 5,
+      "glyphTokens": 2,
+      "savings": 60
+    },
+    {
+      "text": "Error: operation timed out",
+      "glyphId": "E_TIMEOUT",
+      "desc": "Underscore",
+      "textTokens": 5,
+      "glyphTokens": 2,
+      "savings": 60
+    },
+    {
+      "text": "Error: operation timed out",
+      "glyphId": "ErrTimeout",
+      "desc": "CamelCase",
+      "textTokens": 5,
+      "glyphTokens": 2,
+      "savings": 60
+    },
+    {
+      "text": "Query database for user records with high priority",
+      "glyphId": "Q01",
+      "desc": "Just category",
+      "textTokens": 8,
+      "glyphTokens": 2,
+      "savings": 75
+    },
+    {
+      "text": "Query database for user records with high priority",
+      "glyphId": "Q01_HP",
+      "desc": "With priority",
+      "textTokens": 8,
+      "glyphTokens": 3,
+      "savings": 63
+    },
+    {
+      "text": "Query database for user records with high priority",
+      "glyphId": "QDB_USR_HI",
+      "desc": "Full semantic",
+      "textTokens": 8,
+      "glyphTokens": 5,
+      "savings": 38
+    },
+    {
+      "text": "Query database for user records with high priority",
+      "glyphId": "QdbUsrHi",
+      "desc": "CamelFull",
+      "textTokens": 8,
+      "glyphTokens": 5,
+      "savings": 38
+    }
+  ]
+}
