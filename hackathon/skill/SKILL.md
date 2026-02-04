@@ -26,14 +26,31 @@ Ayni is like **x402 for payments**, but for **agent coordination**:
 
 ## Available Tools
 
+### Tier 1: Free (No Wallet Required)
+
 | Tool | Cost | Description |
 |------|------|-------------|
 | `ayni_encode` | Free | Convert text intent to glyph |
 | `ayni_decode` | Free | Convert glyph to meaning |
-| `ayni_attest` | 0.01 MON | Store message hash on-chain |
-| `ayni_send` | 0.001 MON | Relay + attest message |
+| `ayni_hash` | Free | Compute message hash (self-attest later) |
 | `ayni_verify` | Free | Check if message was attested |
 | `ayni_glyphs` | Free | List all available glyphs |
+| `ayni_identify` | Free | Get session ID for tracking |
+
+### Tier 2: Paid (Server Wallet Pays Gas)
+
+| Tool | Cost | Description |
+|------|------|-------------|
+| `ayni_attest` | 0.01 MON | Store message hash on-chain |
+| `ayni_send` | 0.001 MON | Relay + attest message |
+
+### Tier 3: Governance (Requires Stake)
+
+| Tool | Cost | Description |
+|------|------|-------------|
+| `ayni_propose` | 0.01 MON stake | Propose a new glyph |
+| `ayni_vote` | Free | Vote on a proposal |
+| `ayni_proposals` | Free | List active proposals |
 
 ## Glyph Reference
 
