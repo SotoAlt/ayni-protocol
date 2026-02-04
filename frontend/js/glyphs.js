@@ -171,6 +171,165 @@ function makeSymbol(type) {
     // Pupil
     fillRect(grid, 6, 6, 4, 4);
   }
+  // ═══════════════════════════════════════
+  // CRYPTO/DeFi SYMBOLS
+  // ═══════════════════════════════════════
+  else if (type === 'swap') {
+    // Two arrows exchanging
+    // Top arrow pointing right
+    fillRect(grid, 2, 3, 8, 2);
+    fillRect(grid, 10, 2, 2, 2);
+    fillRect(grid, 12, 3, 2, 2);
+    fillRect(grid, 10, 5, 2, 2);
+    // Bottom arrow pointing left
+    fillRect(grid, 6, 9, 8, 2);
+    fillRect(grid, 4, 8, 2, 2);
+    fillRect(grid, 2, 9, 2, 2);
+    fillRect(grid, 4, 11, 2, 2);
+  }
+  else if (type === 'stake') {
+    // Lock with token inside
+    fillRect(grid, 5, 1, 6, 2);
+    fillRect(grid, 5, 1, 2, 4);
+    fillRect(grid, 9, 1, 2, 4);
+    fillRect(grid, 3, 5, 10, 9);
+    // Coin inside
+    fillRect(grid, 6, 8, 4, 4);
+  }
+  else if (type === 'bridge') {
+    // Two chains linked
+    fillRect(grid, 1, 5, 5, 6);
+    fillRect(grid, 10, 5, 5, 6);
+    // Link between
+    fillRect(grid, 6, 7, 4, 2);
+    // Inner holes
+    fillRect(grid, 2, 7, 2, 2);
+    fillRect(grid, 12, 7, 2, 2);
+  }
+  else if (type === 'vote') {
+    // Ballot box with paper
+    fillRect(grid, 3, 7, 10, 7);
+    // Slot
+    fillRect(grid, 6, 6, 4, 2);
+    // Paper going in
+    fillRect(grid, 6, 1, 4, 6);
+    // Check on paper
+    fillRect(grid, 7, 3, 2, 2);
+  }
+  else if (type === 'harvest') {
+    // Hand receiving coins
+    fillRect(grid, 2, 10, 12, 4);
+    // Coins falling
+    fillRect(grid, 4, 2, 3, 3);
+    fillRect(grid, 9, 4, 3, 3);
+    fillRect(grid, 6, 6, 3, 3);
+  }
+  else if (type === 'limit') {
+    // Price tag shape
+    fillRect(grid, 2, 4, 10, 8);
+    fillRect(grid, 12, 6, 2, 4);
+    // Hole
+    fillRect(grid, 4, 7, 2, 2);
+    // Lines (price)
+    fillRect(grid, 7, 6, 4, 2);
+    fillRect(grid, 7, 9, 3, 2);
+  }
+  else if (type === 'shield') {
+    // Shield shape
+    fillRect(grid, 3, 1, 10, 4);
+    fillRect(grid, 3, 5, 10, 4);
+    fillRect(grid, 4, 9, 8, 3);
+    fillRect(grid, 6, 12, 4, 2);
+    fillRect(grid, 7, 14, 2, 2);
+  }
+  // ═══════════════════════════════════════
+  // AGENT WORKFLOW SYMBOLS
+  // ═══════════════════════════════════════
+  else if (type === 'task') {
+    // Checkbox with check
+    fillRect(grid, 2, 2, 12, 12);
+    // Inner white
+    fillRect(grid, 4, 4, 8, 8);
+    // Checkmark
+    fillRect(grid, 5, 8, 2, 2);
+    fillRect(grid, 7, 10, 2, 2);
+    fillRect(grid, 9, 8, 2, 2);
+    fillRect(grid, 11, 6, 2, 2);
+  }
+  else if (type === 'heartbeat') {
+    // Pulse line
+    fillRect(grid, 0, 7, 4, 2);
+    fillRect(grid, 4, 4, 2, 3);
+    fillRect(grid, 6, 2, 2, 4);
+    fillRect(grid, 8, 9, 2, 4);
+    fillRect(grid, 10, 6, 2, 3);
+    fillRect(grid, 12, 7, 4, 2);
+  }
+  else if (type === 'broadcast') {
+    // Speaker with waves
+    fillRect(grid, 1, 5, 4, 6);
+    // Waves
+    fillRect(grid, 6, 4, 2, 8);
+    fillRect(grid, 9, 2, 2, 12);
+    fillRect(grid, 12, 0, 2, 16);
+  }
+  else if (type === 'checkpoint') {
+    // Flag
+    fillRect(grid, 4, 1, 2, 14);
+    fillRect(grid, 6, 1, 8, 6);
+    // Base
+    fillRect(grid, 2, 13, 8, 3);
+  }
+  else if (type === 'delegate') {
+    // Two figures with arrow
+    // Figure 1
+    fillRect(grid, 2, 2, 3, 3);
+    fillRect(grid, 2, 6, 3, 6);
+    // Figure 2
+    fillRect(grid, 11, 2, 3, 3);
+    fillRect(grid, 11, 6, 3, 6);
+    // Arrow between
+    fillRect(grid, 6, 7, 4, 2);
+    fillRect(grid, 9, 5, 2, 2);
+    fillRect(grid, 9, 9, 2, 2);
+  }
+  else if (type === 'queue') {
+    // Stacked items
+    fillRect(grid, 2, 1, 12, 3);
+    fillRect(grid, 2, 6, 12, 3);
+    fillRect(grid, 2, 11, 12, 3);
+  }
+  else if (type === 'alert') {
+    // Diamond with exclamation
+    fillRect(grid, 7, 0, 2, 2);
+    fillRect(grid, 5, 2, 6, 2);
+    fillRect(grid, 3, 4, 10, 2);
+    fillRect(grid, 1, 6, 14, 2);
+    fillRect(grid, 3, 8, 10, 2);
+    fillRect(grid, 5, 10, 6, 2);
+    fillRect(grid, 7, 12, 2, 2);
+    // Exclamation (hollow in center)
+    fillRect(grid, 7, 4, 2, 4);
+    fillRect(grid, 7, 10, 2, 2);
+  }
+  else if (type === 'log') {
+    // Stacked papers
+    fillRect(grid, 4, 2, 10, 12);
+    fillRect(grid, 2, 4, 2, 10);
+    // Lines
+    fillRect(grid, 6, 5, 6, 2);
+    fillRect(grid, 6, 9, 5, 2);
+  }
+  else if (type === 'sync') {
+    // Two circular arrows
+    fillRect(grid, 2, 2, 8, 2);
+    fillRect(grid, 10, 2, 2, 4);
+    fillRect(grid, 8, 4, 2, 2);
+    // Bottom arrow
+    fillRect(grid, 6, 12, 8, 2);
+    fillRect(grid, 4, 10, 2, 4);
+    fillRect(grid, 6, 10, 2, 2);
+  }
 
   return grid;
 }
@@ -330,6 +489,7 @@ function makeMachine(type) {
 // ═══════════════════════════════════════
 
 const GLYPH_PATTERNS = {
+  // Humanoids
   asking: makeHumanoid('asking'),
   giving: makeHumanoid('giving'),
   waiting: makeHumanoid('waiting'),
@@ -337,6 +497,7 @@ const GLYPH_PATTERNS = {
   thinking: makeHumanoid('waiting'),
   celebrating: makeHumanoid('celebrating'),
 
+  // Core symbols
   database: makeSymbol('database'),
   checkmark: makeSymbol('checkmark'),
   x: makeSymbol('x'),
@@ -348,26 +509,51 @@ const GLYPH_PATTERNS = {
   heart: makeSymbol('heart'),
   eye: makeSymbol('eye'),
 
+  // Creatures
   bird: makeCreature('bird'),
   snake: makeCreature('snake'),
   spider: makeCreature('spider'),
   fish: makeCreature('fish'),
   cat: makeCreature('cat'),
 
+  // Machines
   robot: makeMachine('robot'),
   terminal: makeMachine('terminal'),
   server: makeMachine('server'),
   drone: makeMachine('drone'),
-  antenna: makeMachine('antenna')
+  antenna: makeMachine('antenna'),
+
+  // Crypto/DeFi symbols
+  swap: makeSymbol('swap'),
+  stake: makeSymbol('stake'),
+  bridge: makeSymbol('bridge'),
+  vote: makeSymbol('vote'),
+  harvest: makeSymbol('harvest'),
+  limit: makeSymbol('limit'),
+  shield: makeSymbol('shield'),
+
+  // Agent workflow symbols
+  task: makeSymbol('task'),
+  heartbeat: makeSymbol('heartbeat'),
+  broadcast: makeSymbol('broadcast'),
+  checkpoint: makeSymbol('checkpoint'),
+  delegate: makeSymbol('delegate'),
+  queue: makeSymbol('queue'),
+  alert: makeSymbol('alert'),
+  log: makeSymbol('log'),
+  sync: makeSymbol('sync')
 };
 
 const GLYPH_MEANINGS = {
+  // Humanoids
   asking: 'Query',
   giving: 'Response',
   waiting: 'Waiting',
   running: 'Execute',
   thinking: 'Processing',
   celebrating: 'Success!',
+
+  // Core symbols
   database: 'Database',
   checkmark: 'Success',
   x: 'Error',
@@ -378,32 +564,60 @@ const GLYPH_MEANINGS = {
   arrow: 'Direction',
   heart: 'Health',
   eye: 'Watching',
+
+  // Creatures
   bird: 'Messenger',
   snake: 'Data Flow',
   spider: 'Network',
   fish: 'Stream',
   cat: 'Observer',
+
+  // Machines
   robot: 'Agent',
   terminal: 'Claude',
   server: 'Server',
   drone: 'Scout',
-  antenna: 'Broadcast'
+  antenna: 'Broadcast',
+
+  // Crypto/DeFi
+  swap: 'Token Swap',
+  stake: 'Stake Tokens',
+  bridge: 'Bridge',
+  vote: 'DAO Vote',
+  harvest: 'Harvest Rewards',
+  limit: 'Limit Order',
+  shield: 'Stop Loss',
+
+  // Agent workflow
+  task: 'Task',
+  heartbeat: 'Heartbeat',
+  broadcast: 'Broadcast',
+  checkpoint: 'Checkpoint',
+  delegate: 'Delegate',
+  queue: 'Queue',
+  alert: 'Alert',
+  log: 'Log Entry',
+  sync: 'Sync'
 };
 
 const GLYPH_CATEGORIES = {
   humanoid: ['asking', 'giving', 'waiting', 'running', 'thinking', 'celebrating'],
   creature: ['bird', 'snake', 'spider', 'fish', 'cat'],
   machine: ['robot', 'terminal', 'server', 'drone', 'antenna'],
-  symbol: ['database', 'checkmark', 'x', 'clock', 'lock', 'coin', 'lightning', 'arrow', 'heart', 'eye']
+  symbol: ['database', 'checkmark', 'x', 'clock', 'lock', 'coin', 'lightning', 'arrow', 'heart', 'eye'],
+  crypto: ['swap', 'stake', 'bridge', 'vote', 'harvest', 'limit', 'shield'],
+  agent: ['task', 'heartbeat', 'broadcast', 'checkpoint', 'delegate', 'queue', 'alert', 'log', 'sync']
 };
 
 const GLYPH_COMBOS = {};
 
 const CATEGORY_COLORS = {
-  humanoid: '#00d9ff',
-  creature: '#ff9500',
-  machine: '#00ff41',
-  symbol: '#9d4edd'
+  humanoid: '#00d9ff',   // Cyan
+  creature: '#ff9500',   // Orange
+  machine: '#00ff41',    // Green
+  symbol: '#9d4edd',     // Purple
+  crypto: '#f5a623',     // Gold - for DeFi operations
+  agent: '#4a9eff'       // Blue - for agent workflows
 };
 
 export {

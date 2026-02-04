@@ -28,13 +28,14 @@ import { keccak256, toBytes } from 'viem';
 // Configuration
 const SERVER_URL = process.env.AYNI_SERVER_URL || 'http://localhost:3000';
 
-// Glyph library
-const GLYPH_LIBRARY = {
+// Glyph library - Foundation glyphs
+const FOUNDATION_GLYPHS = {
   Q01: {
     id: 'Q01',
     meaning: 'Query Database',
     pose: 'arms_up',
     symbol: 'database',
+    domain: 'foundation',
     patterns: ['query', 'search', 'find', 'get', 'fetch', 'lookup', 'database', 'db', 'request'],
   },
   R01: {
@@ -42,6 +43,7 @@ const GLYPH_LIBRARY = {
     meaning: 'Response Success',
     pose: 'arms_down',
     symbol: 'checkmark',
+    domain: 'foundation',
     patterns: ['success', 'ok', 'done', 'complete', 'finished', 'response', 'result', 'found', 'yes'],
   },
   E01: {
@@ -49,6 +51,7 @@ const GLYPH_LIBRARY = {
     meaning: 'Error',
     pose: 'distressed',
     symbol: 'x',
+    domain: 'foundation',
     patterns: ['error', 'fail', 'failed', 'exception', 'problem', 'issue', 'bug', 'crash', 'no'],
   },
   A01: {
@@ -56,8 +59,240 @@ const GLYPH_LIBRARY = {
     meaning: 'Execute Action',
     pose: 'action',
     symbol: 'diamond',
-    patterns: ['execute', 'run', 'action', 'do', 'perform', 'start', 'begin', 'process', 'task'],
+    domain: 'foundation',
+    patterns: ['execute', 'run', 'action', 'do', 'perform', 'start', 'begin', 'process'],
   },
+};
+
+// Crypto/DeFi domain glyphs (12 essential operations)
+const CRYPTO_GLYPHS = {
+  X01: {
+    id: 'X01',
+    meaning: 'Token Swap',
+    pose: 'action',
+    symbol: 'arrowsExchange',
+    domain: 'crypto',
+    patterns: ['swap', 'exchange', 'trade', 'dex', 'uniswap', 'token swap'],
+    payload: { tokenIn: 'string', tokenOut: 'string', amount: 'number', slippage: 'number' },
+  },
+  X02: {
+    id: 'X02',
+    meaning: 'Stake Tokens',
+    pose: 'arms_down',
+    symbol: 'lock',
+    domain: 'crypto',
+    patterns: ['stake', 'staking', 'deposit', 'vault', 'lock tokens', 'yield'],
+    payload: { token: 'string', amount: 'number', pool: 'string', duration: 'number' },
+  },
+  X03: {
+    id: 'X03',
+    meaning: 'Unstake Tokens',
+    pose: 'arms_up',
+    symbol: 'unlock',
+    domain: 'crypto',
+    patterns: ['unstake', 'withdraw', 'unlock', 'exit pool'],
+    payload: { token: 'string', amount: 'number', pool: 'string' },
+  },
+  X04: {
+    id: 'X04',
+    meaning: 'Transfer Tokens',
+    pose: 'pointing',
+    symbol: 'arrowUp',
+    domain: 'crypto',
+    patterns: ['transfer', 'send tokens', 'move tokens', 'pay'],
+    payload: { token: 'string', to: 'address', amount: 'number' },
+  },
+  X05: {
+    id: 'X05',
+    meaning: 'Approve Token',
+    pose: 'thinking',
+    symbol: 'checkmark',
+    domain: 'crypto',
+    patterns: ['approve', 'allowance', 'permit', 'authorization'],
+    payload: { token: 'string', spender: 'address', amount: 'number' },
+  },
+  X06: {
+    id: 'X06',
+    meaning: 'Harvest Rewards',
+    pose: 'receiving',
+    symbol: 'coin',
+    domain: 'crypto',
+    patterns: ['harvest', 'claim', 'rewards', 'yield', 'collect rewards'],
+    payload: { pool: 'string', rewardToken: 'string' },
+  },
+  X07: {
+    id: 'X07',
+    meaning: 'Governance Vote',
+    pose: 'pointing',
+    symbol: 'ballot',
+    domain: 'crypto',
+    patterns: ['vote', 'governance', 'dao vote', 'proposal vote'],
+    payload: { proposalId: 'number', support: 'boolean', reason: 'string' },
+  },
+  X08: {
+    id: 'X08',
+    meaning: 'Create Proposal',
+    pose: 'arms_up',
+    symbol: 'document',
+    domain: 'crypto',
+    patterns: ['propose', 'create proposal', 'governance proposal', 'submit proposal'],
+    payload: { title: 'string', actions: 'array' },
+  },
+  X09: {
+    id: 'X09',
+    meaning: 'Bridge Tokens',
+    pose: 'action',
+    symbol: 'chainLink',
+    domain: 'crypto',
+    patterns: ['bridge', 'cross-chain', 'layer2', 'l2', 'transfer chain'],
+    payload: { token: 'string', amount: 'number', fromChain: 'string', toChain: 'string' },
+  },
+  X10: {
+    id: 'X10',
+    meaning: 'Limit Order',
+    pose: 'pointing',
+    symbol: 'priceTag',
+    domain: 'crypto',
+    patterns: ['limit order', 'limit buy', 'limit sell', 'price order'],
+    payload: { pair: 'string', price: 'number', amount: 'number', side: 'string' },
+  },
+  X11: {
+    id: 'X11',
+    meaning: 'Stop Loss',
+    pose: 'blocking',
+    symbol: 'shield',
+    domain: 'crypto',
+    patterns: ['stop loss', 'stop-loss', 'protect', 'risk management'],
+    payload: { pair: 'string', triggerPrice: 'number', amount: 'number' },
+  },
+  X12: {
+    id: 'X12',
+    meaning: 'Trade Executed',
+    pose: 'celebrating',
+    symbol: 'checkmark',
+    domain: 'crypto',
+    patterns: ['trade executed', 'order filled', 'trade complete', 'execution'],
+    payload: { orderId: 'string', status: 'string', txHash: 'string' },
+  },
+};
+
+// General Agent glyphs (12 essential operations)
+const GENERAL_AGENT_GLYPHS = {
+  T01: {
+    id: 'T01',
+    meaning: 'Assign Task',
+    pose: 'pointing',
+    symbol: 'delegate',
+    domain: 'general',
+    patterns: ['assign task', 'delegate', 'task', 'assign', 'worker'],
+    payload: { taskId: 'string', worker: 'string', priority: 'number' },
+  },
+  T02: {
+    id: 'T02',
+    meaning: 'Task Complete',
+    pose: 'celebrating',
+    symbol: 'task',
+    domain: 'general',
+    patterns: ['task complete', 'task done', 'finished task', 'completed'],
+    payload: { taskId: 'string', result: 'object', duration: 'number' },
+  },
+  T03: {
+    id: 'T03',
+    meaning: 'Task Failed',
+    pose: 'distressed',
+    symbol: 'x',
+    domain: 'general',
+    patterns: ['task failed', 'task error', 'failed task'],
+    payload: { taskId: 'string', error: 'string', canRetry: 'boolean' },
+  },
+  W01: {
+    id: 'W01',
+    meaning: 'Start Workflow',
+    pose: 'action',
+    symbol: 'play',
+    domain: 'general',
+    patterns: ['start workflow', 'begin workflow', 'workflow start', 'run workflow'],
+    payload: { workflowId: 'string', input: 'object' },
+  },
+  W02: {
+    id: 'W02',
+    meaning: 'Checkpoint',
+    pose: 'standing',
+    symbol: 'checkpoint',
+    domain: 'general',
+    patterns: ['checkpoint', 'save state', 'snapshot', 'save progress'],
+    payload: { workflowId: 'string', step: 'number', state: 'object' },
+  },
+  W03: {
+    id: 'W03',
+    meaning: 'Pause Workflow',
+    pose: 'blocking',
+    symbol: 'pause',
+    domain: 'general',
+    patterns: ['pause', 'pause workflow', 'stop workflow', 'hold'],
+    payload: { workflowId: 'string', reason: 'string' },
+  },
+  C01: {
+    id: 'C01',
+    meaning: 'Notify Agent',
+    pose: 'pointing',
+    symbol: 'lightning',
+    domain: 'general',
+    patterns: ['notify', 'alert agent', 'ping', 'message agent'],
+    payload: { recipient: 'string', message: 'string' },
+  },
+  C02: {
+    id: 'C02',
+    meaning: 'Broadcast',
+    pose: 'celebrating',
+    symbol: 'broadcast',
+    domain: 'general',
+    patterns: ['broadcast', 'announce', 'notify all', 'pubsub'],
+    payload: { topic: 'string', message: 'string' },
+  },
+  C03: {
+    id: 'C03',
+    meaning: 'Acknowledge',
+    pose: 'arms_down',
+    symbol: 'checkmark',
+    domain: 'general',
+    patterns: ['ack', 'acknowledge', 'received', 'confirm receipt'],
+    payload: { messageId: 'string', status: 'string' },
+  },
+  M01: {
+    id: 'M01',
+    meaning: 'Heartbeat',
+    pose: 'standing',
+    symbol: 'heartbeat',
+    domain: 'general',
+    patterns: ['heartbeat', 'alive', 'health check', 'ping', 'status'],
+    payload: { agentId: 'string', timestamp: 'number', load: 'number' },
+  },
+  M02: {
+    id: 'M02',
+    meaning: 'Log Entry',
+    pose: 'standing',
+    symbol: 'log',
+    domain: 'general',
+    patterns: ['log', 'log entry', 'record', 'audit'],
+    payload: { level: 'string', message: 'string', context: 'object' },
+  },
+  M03: {
+    id: 'M03',
+    meaning: 'Alert',
+    pose: 'distressed',
+    symbol: 'alert',
+    domain: 'general',
+    patterns: ['alert', 'warning', 'critical', 'urgent alert'],
+    payload: { severity: 'string', condition: 'string' },
+  },
+};
+
+// Combined glyph library
+const GLYPH_LIBRARY = {
+  ...FOUNDATION_GLYPHS,
+  ...CRYPTO_GLYPHS,
+  ...GENERAL_AGENT_GLYPHS,
 };
 
 type GlyphId = keyof typeof GLYPH_LIBRARY;
@@ -82,13 +317,16 @@ function generateSessionId(): string {
 const tools: Tool[] = [
   {
     name: 'ayni_encode',
-    description: 'Convert natural language intent to Ayni glyph. Returns the matching glyph ID (Q01, R01, E01, A01) based on keywords in the text.',
+    description: `Convert natural language intent to Ayni glyph. Supports 3 domains:
+- Foundation (Q01, R01, E01, A01): query, response, error, action
+- Crypto (X01-X12): swap, stake, unstake, transfer, approve, harvest, vote, propose, bridge, limit order, stop loss, trade executed
+- Agent (T01-T03, W01-W03, C01-C03, M01-M03): task management, workflow, communication, monitoring`,
     inputSchema: {
       type: 'object',
       properties: {
         text: {
           type: 'string',
-          description: 'Natural language intent to encode (e.g., "query the database for users")',
+          description: 'Natural language intent to encode (e.g., "swap ETH for USDC", "assign task to worker", "heartbeat")',
         },
       },
       required: ['text'],
@@ -96,13 +334,13 @@ const tools: Tool[] = [
   },
   {
     name: 'ayni_decode',
-    description: 'Decode an Ayni glyph ID to its full meaning, pose, and symbol information.',
+    description: 'Decode an Ayni glyph ID to its full meaning, pose, symbol, domain, and expected payload structure.',
     inputSchema: {
       type: 'object',
       properties: {
         glyph: {
           type: 'string',
-          description: 'Glyph ID to decode (Q01, R01, E01, or A01)',
+          description: 'Glyph ID to decode (e.g., Q01, X01, T01, M01)',
         },
       },
       required: ['glyph'],
@@ -345,17 +583,30 @@ function handleDecode(glyphId: string): unknown {
       error: 'Unknown glyph ID',
       provided: glyphId,
       availableGlyphs: Object.keys(GLYPH_LIBRARY),
+      domains: {
+        foundation: Object.keys(FOUNDATION_GLYPHS),
+        crypto: Object.keys(CRYPTO_GLYPHS),
+        general: Object.keys(GENERAL_AGENT_GLYPHS),
+      },
     };
   }
 
-  return {
+  const result: Record<string, unknown> = {
     success: true,
     glyph: normalizedId,
     meaning: glyph.meaning,
     pose: glyph.pose,
     symbol: glyph.symbol,
+    domain: glyph.domain,
     patterns: glyph.patterns,
   };
+
+  // Include payload schema if available
+  if ('payload' in glyph && glyph.payload) {
+    result.payload = glyph.payload;
+  }
+
+  return result;
 }
 
 async function handleAttest(glyph: string, data?: object, recipient?: string): Promise<unknown> {
@@ -434,20 +685,51 @@ async function handleVerify(hash: string): Promise<unknown> {
 }
 
 function handleGlyphs(): unknown {
-  return {
-    success: true,
-    count: Object.keys(GLYPH_LIBRARY).length,
-    glyphs: Object.values(GLYPH_LIBRARY).map((g) => ({
+  const formatGlyphs = (glyphs: Record<string, unknown>) =>
+    Object.values(glyphs).map((g: any) => ({
       id: g.id,
       meaning: g.meaning,
       pose: g.pose,
       symbol: g.symbol,
-    })),
+      domain: g.domain,
+    }));
+
+  return {
+    success: true,
+    count: Object.keys(GLYPH_LIBRARY).length,
+    domains: {
+      foundation: {
+        count: Object.keys(FOUNDATION_GLYPHS).length,
+        glyphs: formatGlyphs(FOUNDATION_GLYPHS),
+        description: 'Universal query/response/error/action glyphs',
+      },
+      crypto: {
+        count: Object.keys(CRYPTO_GLYPHS).length,
+        glyphs: formatGlyphs(CRYPTO_GLYPHS),
+        description: 'DeFi operations: swap, stake, bridge, vote, etc.',
+      },
+      general: {
+        count: Object.keys(GENERAL_AGENT_GLYPHS).length,
+        glyphs: formatGlyphs(GENERAL_AGENT_GLYPHS),
+        description: 'Agent workflows: task, workflow, communication, monitoring',
+      },
+    },
     usage: {
+      // Foundation
       Q01: 'Use for queries, searches, and data requests',
       R01: 'Use for successful responses and completions',
       E01: 'Use for errors and failures',
       A01: 'Use for actions and tasks to execute',
+      // Crypto (key ones)
+      X01: 'Use for token swaps on DEX',
+      X02: 'Use for staking tokens in pools',
+      X07: 'Use for DAO governance voting',
+      X09: 'Use for cross-chain bridging',
+      // Agent (key ones)
+      T01: 'Use for assigning tasks to workers',
+      T02: 'Use for reporting task completion',
+      M01: 'Use for heartbeat/health checks',
+      C02: 'Use for broadcasting to all agents',
     },
   };
 }

@@ -276,6 +276,291 @@ const EXTENDED_GLYPHS = {
 };
 
 /**
+ * Crypto/DeFi domain glyphs (NEW - 12 essential operations)
+ * Prefix: X (eXchange/crypto)
+ */
+const CRYPTO_GLYPHS = {
+  X01: {
+    id: 'X01',
+    meaning: 'Token Swap',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'action',
+    symbol: 'arrowsExchange',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['swap', 'exchange', 'trade', 'dex', 'uniswap', 'token'],
+    payload: { tokenIn: 'string', tokenOut: 'string', amount: 'number', slippage: 'number' }
+  },
+  X02: {
+    id: 'X02',
+    meaning: 'Stake Tokens',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'arms_down',
+    symbol: 'lock',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['stake', 'staking', 'deposit', 'vault', 'lock', 'yield'],
+    payload: { token: 'string', amount: 'number', pool: 'string', duration: 'number' }
+  },
+  X03: {
+    id: 'X03',
+    meaning: 'Unstake Tokens',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'arms_up',
+    symbol: 'unlock',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['unstake', 'withdraw', 'unlock', 'exit'],
+    payload: { token: 'string', amount: 'number', pool: 'string' }
+  },
+  X04: {
+    id: 'X04',
+    meaning: 'Transfer Tokens',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'pointing',
+    symbol: 'arrowUp',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['transfer', 'send', 'move', 'pay'],
+    payload: { token: 'string', to: 'address', amount: 'number' }
+  },
+  X05: {
+    id: 'X05',
+    meaning: 'Approve Token',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'thinking',
+    symbol: 'checkmark',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['approve', 'allowance', 'permit', 'authorization'],
+    payload: { token: 'string', spender: 'address', amount: 'number' }
+  },
+  X06: {
+    id: 'X06',
+    meaning: 'Harvest Rewards',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'receiving',
+    symbol: 'coin',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['harvest', 'claim', 'rewards', 'yield', 'collect'],
+    payload: { pool: 'string', rewardToken: 'string' }
+  },
+  X07: {
+    id: 'X07',
+    meaning: 'Governance Vote',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'pointing',
+    symbol: 'ballot',
+    symbolPosition: { x: 6, y: 8 },
+    tags: ['vote', 'governance', 'dao', 'proposal'],
+    payload: { proposalId: 'number', support: 'boolean', reason: 'string' }
+  },
+  X08: {
+    id: 'X08',
+    meaning: 'Create Proposal',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'arms_up',
+    symbol: 'document',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['propose', 'proposal', 'governance', 'submit'],
+    payload: { title: 'string', actions: 'array' }
+  },
+  X09: {
+    id: 'X09',
+    meaning: 'Bridge Tokens',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'action',
+    symbol: 'chainLink',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['bridge', 'cross-chain', 'transfer', 'layer2', 'l2'],
+    payload: { token: 'string', amount: 'number', fromChain: 'string', toChain: 'string' }
+  },
+  X10: {
+    id: 'X10',
+    meaning: 'Limit Order',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'pointing',
+    symbol: 'priceTag',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['limit', 'order', 'price', 'buy', 'sell'],
+    payload: { pair: 'string', price: 'number', amount: 'number', side: 'string' }
+  },
+  X11: {
+    id: 'X11',
+    meaning: 'Stop Loss',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'blocking',
+    symbol: 'shield',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['stop', 'loss', 'protect', 'risk', 'trigger'],
+    payload: { pair: 'string', triggerPrice: 'number', amount: 'number' }
+  },
+  X12: {
+    id: 'X12',
+    meaning: 'Trade Executed',
+    category: 'crypto',
+    domain: 'crypto',
+    pose: 'celebrating',
+    symbol: 'checkmark',
+    symbolPosition: { x: 6, y: 8 },
+    tags: ['executed', 'filled', 'complete', 'trade', 'success'],
+    payload: { orderId: 'string', status: 'string', txHash: 'string' }
+  }
+};
+
+/**
+ * General Agent glyphs (NEW - 12 essential operations)
+ * Prefixes: T (Task), W (Workflow), C (Communication), M (Monitoring)
+ */
+const GENERAL_AGENT_GLYPHS = {
+  // Task management
+  T01: {
+    id: 'T01',
+    meaning: 'Assign Task',
+    category: 'task',
+    domain: 'general',
+    pose: 'pointing',
+    symbol: 'delegate',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['assign', 'task', 'delegate', 'worker', 'job'],
+    payload: { taskId: 'string', worker: 'string', priority: 'number' }
+  },
+  T02: {
+    id: 'T02',
+    meaning: 'Task Complete',
+    category: 'task',
+    domain: 'general',
+    pose: 'celebrating',
+    symbol: 'task',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['complete', 'done', 'finished', 'success', 'task'],
+    payload: { taskId: 'string', result: 'object', duration: 'number' }
+  },
+  T03: {
+    id: 'T03',
+    meaning: 'Task Failed',
+    category: 'task',
+    domain: 'general',
+    pose: 'distressed',
+    symbol: 'x',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['failed', 'error', 'task', 'retry'],
+    payload: { taskId: 'string', error: 'string', canRetry: 'boolean' }
+  },
+
+  // Workflow management
+  W01: {
+    id: 'W01',
+    meaning: 'Start Workflow',
+    category: 'workflow',
+    domain: 'general',
+    pose: 'action',
+    symbol: 'play',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['start', 'workflow', 'begin', 'run', 'execute'],
+    payload: { workflowId: 'string', input: 'object' }
+  },
+  W02: {
+    id: 'W02',
+    meaning: 'Checkpoint',
+    category: 'workflow',
+    domain: 'general',
+    pose: 'standing',
+    symbol: 'checkpoint',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['checkpoint', 'save', 'state', 'snapshot'],
+    payload: { workflowId: 'string', step: 'number', state: 'object' }
+  },
+  W03: {
+    id: 'W03',
+    meaning: 'Pause Workflow',
+    category: 'workflow',
+    domain: 'general',
+    pose: 'blocking',
+    symbol: 'pause',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['pause', 'stop', 'wait', 'hold'],
+    payload: { workflowId: 'string', reason: 'string' }
+  },
+
+  // Communication
+  C01: {
+    id: 'C01',
+    meaning: 'Notify Agent',
+    category: 'communication',
+    domain: 'general',
+    pose: 'pointing',
+    symbol: 'lightning',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['notify', 'alert', 'message', 'ping'],
+    payload: { recipient: 'string', message: 'string' }
+  },
+  C02: {
+    id: 'C02',
+    meaning: 'Broadcast',
+    category: 'communication',
+    domain: 'general',
+    pose: 'celebrating',
+    symbol: 'broadcast',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['broadcast', 'announce', 'all', 'pubsub'],
+    payload: { topic: 'string', message: 'string' }
+  },
+  C03: {
+    id: 'C03',
+    meaning: 'Acknowledge',
+    category: 'communication',
+    domain: 'general',
+    pose: 'arms_down',
+    symbol: 'checkmark',
+    symbolPosition: { x: 6, y: 8 },
+    tags: ['ack', 'acknowledge', 'received', 'confirm'],
+    payload: { messageId: 'string', status: 'string' }
+  },
+
+  // Monitoring
+  M01: {
+    id: 'M01',
+    meaning: 'Heartbeat',
+    category: 'monitoring',
+    domain: 'general',
+    pose: 'standing',
+    symbol: 'heartbeat',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['heartbeat', 'alive', 'health', 'ping', 'status'],
+    payload: { agentId: 'string', timestamp: 'number', load: 'number' }
+  },
+  M02: {
+    id: 'M02',
+    meaning: 'Log Entry',
+    category: 'monitoring',
+    domain: 'general',
+    pose: 'standing',
+    symbol: 'log',
+    symbolPosition: { x: 6, y: 8 },
+    tags: ['log', 'entry', 'record', 'audit'],
+    payload: { level: 'string', message: 'string', context: 'object' }
+  },
+  M03: {
+    id: 'M03',
+    meaning: 'Alert',
+    category: 'monitoring',
+    domain: 'general',
+    pose: 'distressed',
+    symbol: 'alert',
+    symbolPosition: { x: 24, y: 8 },
+    tags: ['alert', 'warning', 'critical', 'urgent'],
+    payload: { severity: 'string', condition: 'string' }
+  }
+};
+
+/**
  * GlyphLibrary class
  */
 export class GlyphLibrary {
@@ -307,11 +592,66 @@ export class GlyphLibrary {
   }
 
   /**
-   * Load extended glyph library
+   * Load extended glyph library (legacy support)
    */
   loadExtended() {
     this.specs = { ...this.specs, ...EXTENDED_GLYPHS };
     return this;
+  }
+
+  /**
+   * Load foundation glyphs only (4 universal glyphs)
+   * @returns {GlyphLibrary} this
+   */
+  loadFoundation() {
+    this.specs = { ...FOUNDATION_GLYPHS };
+    this.clearCache();
+    return this;
+  }
+
+  /**
+   * Load crypto/DeFi domain glyphs (12 crypto operations)
+   * Adds: X01-X12 for swap, stake, bridge, vote, etc.
+   * @returns {GlyphLibrary} this
+   */
+  loadCrypto() {
+    this.specs = { ...this.specs, ...CRYPTO_GLYPHS };
+    return this;
+  }
+
+  /**
+   * Load general agent glyphs (12 agent operations)
+   * Adds: T01-T03 (task), W01-W03 (workflow), C01-C03 (communication), M01-M03 (monitoring)
+   * @returns {GlyphLibrary} this
+   */
+  loadGeneral() {
+    this.specs = { ...this.specs, ...GENERAL_AGENT_GLYPHS };
+    return this;
+  }
+
+  /**
+   * Load all domain glyphs
+   * @returns {GlyphLibrary} this
+   */
+  loadAll() {
+    this.specs = {
+      ...FOUNDATION_GLYPHS,
+      ...EXTENDED_GLYPHS,
+      ...CRYPTO_GLYPHS,
+      ...GENERAL_AGENT_GLYPHS
+    };
+    return this;
+  }
+
+  /**
+   * Get glyphs by domain
+   * @param {string} domain - Domain name ('crypto', 'general', 'foundation')
+   * @returns {string[]} Array of glyph IDs
+   */
+  byDomain(domain) {
+    return Object.entries(this.specs)
+      .filter(([_, spec]) => spec.domain === domain)
+      .map(([id]) => id);
   }
 
   /**
@@ -610,9 +950,14 @@ let defaultLibrary = null;
  */
 export function getDefaultLibrary() {
   if (!defaultLibrary) {
-    defaultLibrary = new GlyphLibrary().loadExtended();
+    defaultLibrary = new GlyphLibrary().loadAll();
   }
   return defaultLibrary;
 }
+
+/**
+ * Export glyph specifications for external use
+ */
+export { FOUNDATION_GLYPHS, EXTENDED_GLYPHS, CRYPTO_GLYPHS, GENERAL_AGENT_GLYPHS };
 
 export default GlyphLibrary;

@@ -416,6 +416,252 @@ const symbols = {
     // Lines on body
     drawLine(glyph, x - 1, y - 1, x - 1, y + 2);
     drawLine(glyph, x + 1, y - 1, x + 1, y + 2);
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // CRYPTO/DeFi SYMBOLS - New domain-specific glyphs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Arrows Exchange - bidirectional swap arrows
+   * Used for token swaps and exchanges
+   */
+  arrowsExchange: (glyph, x, y) => {
+    // Top arrow (pointing right)
+    drawLine(glyph, x - 4, y - 2, x + 2, y - 2);
+    drawLine(glyph, x + 2, y - 2, x, y - 4);
+    drawLine(glyph, x + 2, y - 2, x, y);
+    // Bottom arrow (pointing left)
+    drawLine(glyph, x + 4, y + 2, x - 2, y + 2);
+    drawLine(glyph, x - 2, y + 2, x, y + 4);
+    drawLine(glyph, x - 2, y + 2, x, y);
+    // Thicken arrows
+    drawLine(glyph, x - 4, y - 1, x + 1, y - 1);
+    drawLine(glyph, x + 4, y + 1, x - 1, y + 1);
+  },
+
+  /**
+   * Chain Link - blockchain bridge symbol
+   * Used for cross-chain operations
+   */
+  chainLink: (glyph, x, y) => {
+    // Left link (oval)
+    drawRectOutline(glyph, x - 4, y - 2, 4, 5);
+    // Right link (oval)
+    drawRectOutline(glyph, x, y - 2, 4, 5);
+    // Connection point (overlapping)
+    drawLine(glyph, x - 1, y - 1, x - 1, y + 1);
+    drawLine(glyph, x, y - 1, x, y + 1);
+    // Inner details
+    glyph.set(x - 3, y, 0);
+    glyph.set(x + 2, y, 0);
+  },
+
+  /**
+   * Ballot - voting symbol
+   * Used for governance voting
+   */
+  ballot: (glyph, x, y) => {
+    // Ballot box
+    drawRectOutline(glyph, x - 3, y - 1, 7, 5);
+    // Slot at top
+    drawLine(glyph, x - 1, y - 2, x + 1, y - 2);
+    // Paper going in
+    drawRect(glyph, x - 1, y - 4, 3, 3);
+    // Checkmark on paper
+    glyph.set(x - 1, y - 3, 0);
+    glyph.set(x, y - 2, 0);
+    glyph.set(x + 1, y - 4, 0);
+  },
+
+  /**
+   * Price Tag - limit order symbol
+   * Used for trading orders
+   */
+  priceTag: (glyph, x, y) => {
+    // Tag body (diamond-ish)
+    drawLine(glyph, x - 3, y - 2, x + 2, y - 2);
+    drawLine(glyph, x + 2, y - 2, x + 4, y);
+    drawLine(glyph, x + 4, y, x + 2, y + 2);
+    drawLine(glyph, x + 2, y + 2, x - 3, y + 2);
+    drawLine(glyph, x - 3, y + 2, x - 3, y - 2);
+    // Fill
+    drawRect(glyph, x - 2, y - 1, 4, 3);
+    // Hole
+    glyph.set(x - 2, y, 0);
+    // String
+    drawLine(glyph, x - 3, y, x - 5, y - 2);
+  },
+
+  /**
+   * Shield - protection/stop-loss symbol
+   * Used for protective orders
+   */
+  shield: (glyph, x, y) => {
+    // Shield outline
+    drawLine(glyph, x - 3, y - 4, x + 3, y - 4);  // Top
+    drawLine(glyph, x - 3, y - 4, x - 3, y);      // Left top
+    drawLine(glyph, x + 3, y - 4, x + 3, y);      // Right top
+    drawLine(glyph, x - 3, y, x, y + 4);          // Left bottom
+    drawLine(glyph, x + 3, y, x, y + 4);          // Right bottom
+    // Fill top
+    drawRect(glyph, x - 2, y - 3, 5, 3);
+    // Inner fill
+    drawLine(glyph, x - 2, y, x, y + 2);
+    drawLine(glyph, x + 2, y, x, y + 2);
+    drawLine(glyph, x - 1, y + 1, x + 1, y + 1);
+  },
+
+  // ═══════════════════════════════════════════════════════════════
+  // AGENT WORKFLOW SYMBOLS - Task & communication glyphs
+  // ═══════════════════════════════════════════════════════════════
+
+  /**
+   * Task - checkbox/task symbol
+   * Used for task assignment
+   */
+  task: (glyph, x, y) => {
+    // Checkbox
+    drawRectOutline(glyph, x - 3, y - 3, 7, 7);
+    // Checkmark inside
+    drawLine(glyph, x - 2, y, x, y + 2);
+    drawLine(glyph, x, y + 2, x + 3, y - 2);
+  },
+
+  /**
+   * Heartbeat - pulse/alive indicator
+   * Used for agent health monitoring
+   */
+  heartbeat: (glyph, x, y) => {
+    // Baseline
+    drawLine(glyph, x - 4, y, x - 2, y);
+    drawLine(glyph, x + 2, y, x + 4, y);
+    // Pulse spike
+    drawLine(glyph, x - 2, y, x - 1, y - 3);
+    drawLine(glyph, x - 1, y - 3, x, y + 2);
+    drawLine(glyph, x, y + 2, x + 1, y - 2);
+    drawLine(glyph, x + 1, y - 2, x + 2, y);
+  },
+
+  /**
+   * Broadcast - announcement/notify symbol
+   * Used for multi-agent notifications
+   */
+  broadcast: (glyph, x, y) => {
+    // Speaker/source
+    drawRect(glyph, x - 4, y - 1, 3, 3);
+    // Sound waves (concentric arcs as stepped lines)
+    drawLine(glyph, x, y - 2, x, y + 2);
+    drawLine(glyph, x + 1, y - 3, x + 1, y + 3);
+    drawLine(glyph, x + 2, y - 2, x + 2, y + 2);
+    drawLine(glyph, x + 3, y - 4, x + 3, y + 4);
+    drawLine(glyph, x + 4, y - 3, x + 4, y + 3);
+  },
+
+  /**
+   * Checkpoint - save state symbol
+   * Used for workflow checkpoints
+   */
+  checkpoint: (glyph, x, y) => {
+    // Flag pole
+    drawLine(glyph, x - 2, y - 4, x - 2, y + 4);
+    // Flag (triangle)
+    drawLine(glyph, x - 2, y - 4, x + 3, y - 2);
+    drawLine(glyph, x + 3, y - 2, x - 2, y);
+    // Fill flag
+    drawLine(glyph, x - 1, y - 3, x + 1, y - 2);
+    drawLine(glyph, x - 1, y - 2, x + 1, y - 2);
+    drawLine(glyph, x - 1, y - 1, x, y - 1);
+    // Base
+    drawRect(glyph, x - 3, y + 3, 5, 2);
+  },
+
+  /**
+   * Log - document/log entry symbol
+   * Used for logging and audit trails
+   */
+  log: (glyph, x, y) => {
+    // Stacked papers effect
+    drawRectOutline(glyph, x - 2, y - 4, 5, 8);
+    drawLine(glyph, x - 3, y - 3, x - 3, y + 4);
+    drawLine(glyph, x - 3, y + 4, x - 2, y + 4);
+    // Text lines
+    drawLine(glyph, x - 1, y - 2, x + 1, y - 2);
+    drawLine(glyph, x - 1, y, x + 1, y);
+    drawLine(glyph, x - 1, y + 2, x, y + 2);
+  },
+
+  /**
+   * Alert - exclamation/urgent symbol
+   * Used for critical notifications
+   */
+  alert: (glyph, x, y) => {
+    // Diamond shape (more compact than warning triangle)
+    drawLine(glyph, x, y - 4, x - 4, y);
+    drawLine(glyph, x, y - 4, x + 4, y);
+    drawLine(glyph, x - 4, y, x, y + 4);
+    drawLine(glyph, x + 4, y, x, y + 4);
+    // Fill
+    drawLine(glyph, x - 3, y, x, y - 3);
+    drawLine(glyph, x + 3, y, x, y - 3);
+    drawLine(glyph, x - 3, y, x, y + 3);
+    drawLine(glyph, x + 3, y, x, y + 3);
+    // Exclamation
+    drawLine(glyph, x, y - 2, x, y);
+    glyph.set(x, y + 2, 1);
+  },
+
+  /**
+   * Queue - waiting queue symbol
+   * Used for task queuing
+   */
+  queue: (glyph, x, y) => {
+    // Three stacked items
+    drawRect(glyph, x - 3, y - 4, 7, 2);
+    drawRect(glyph, x - 3, y - 1, 7, 2);
+    drawRect(glyph, x - 3, y + 2, 7, 2);
+    // Arrow showing direction
+    glyph.set(x + 4, y - 3, 1);
+    glyph.set(x + 4, y, 1);
+    glyph.set(x + 4, y + 3, 1);
+  },
+
+  /**
+   * Delegate - hand-off symbol
+   * Used for task delegation
+   */
+  delegate: (glyph, x, y) => {
+    // Two figures simplified
+    // Figure 1 (left)
+    glyph.set(x - 3, y - 3, 1);
+    drawLine(glyph, x - 3, y - 2, x - 3, y);
+    // Figure 2 (right)
+    glyph.set(x + 3, y - 3, 1);
+    drawLine(glyph, x + 3, y - 2, x + 3, y);
+    // Arrow between them
+    drawLine(glyph, x - 1, y - 1, x + 1, y - 1);
+    drawLine(glyph, x + 1, y - 1, x, y - 2);
+    drawLine(glyph, x + 1, y - 1, x, y);
+    // Task box being passed
+    drawRectOutline(glyph, x - 1, y + 1, 3, 3);
+  },
+
+  /**
+   * Sync - synchronization symbol
+   * Used for state synchronization
+   */
+  sync: (glyph, x, y) => {
+    // Two curved arrows (as stepped lines)
+    // Top arrow (clockwise)
+    drawLine(glyph, x - 3, y - 2, x + 1, y - 2);
+    drawLine(glyph, x + 1, y - 2, x + 3, y);
+    drawLine(glyph, x + 1, y - 2, x + 1, y - 4);
+    drawLine(glyph, x + 1, y - 2, x + 3, y - 2);
+    // Bottom arrow (counter-clockwise)
+    drawLine(glyph, x + 3, y + 2, x - 1, y + 2);
+    drawLine(glyph, x - 1, y + 2, x - 3, y);
+    drawLine(glyph, x - 1, y + 2, x - 1, y + 4);
+    drawLine(glyph, x - 1, y + 2, x - 3, y + 2);
   }
 };
 

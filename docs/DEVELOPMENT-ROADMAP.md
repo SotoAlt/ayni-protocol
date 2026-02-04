@@ -186,6 +186,59 @@ Lead with efficiency, mention crypto as optional future layer.
 
 ---
 
+## Phase 1.5: Domain Glyph Expansion ✅ COMPLETE
+
+**Status:** Complete (2026-02-04)
+
+### Problem Solved
+
+The original 4 foundation glyphs (Q01, R01, E01, A01) were too abstract - they didn't map to what agents **actually do** in real-world scenarios.
+
+### Deliverables
+
+1. ✅ **24 new domain-specific glyphs** across two domains:
+   - **Crypto/DeFi (X01-X12)**: swap, stake, unstake, transfer, approve, harvest, vote, propose, bridge, limit order, stop loss, trade executed
+   - **General Agent (T01-T03, W01-W03, C01-C03, M01-M03)**: task management, workflow control, communication, monitoring
+
+2. ✅ **New symbols** added to backend:
+   - Crypto: `arrowsExchange`, `chainLink`, `ballot`, `priceTag`, `shield`
+   - Agent: `delegate`, `task`, `heartbeat`, `broadcast`, `checkpoint`, `log`, `alert`, `queue`, `sync`
+
+3. ✅ **Frontend patterns** updated with domain color coding:
+   - Crypto glyphs: Gold (`#f5a623`)
+   - Agent glyphs: Blue (`#4a9eff`)
+
+4. ✅ **MCP Server** updated to recognize domain keywords
+
+5. ✅ **Documentation** created: [GLYPH-VOCABULARY.md](./GLYPH-VOCABULARY.md)
+
+### Domain Loading API
+
+```javascript
+const lib = new GlyphLibrary();
+lib.loadFoundation();  // 4 universal glyphs
+lib.loadCrypto();      // 12 crypto/DeFi glyphs
+lib.loadGeneral();     // 12 general agent glyphs
+lib.loadAll();         // All 28+ glyphs
+```
+
+### Total Glyph Count
+
+| Domain | Count | Prefix | Purpose |
+|--------|-------|--------|---------|
+| Foundation | 4 | Q, R, E, A | Universal operations |
+| Crypto/DeFi | 12 | X | Token operations, governance, trading |
+| General Agent | 12 | T, W, C, M | Task, workflow, communication, monitoring |
+| **Total** | **28** | | Core vocabulary |
+
+### Next Steps
+
+- Test domain glyphs with real agent workflows
+- Validate Hamming distances between new glyphs
+- Gather feedback on glyph coverage
+
+---
+
 ## Phase 2: Market Validation (Week 3-8)
 
 **Prerequisite:** Phase 1 shipped
@@ -374,6 +427,10 @@ These phases should NOT start until Phase 3 succeeds. They exist in documentatio
 | 2026-02-04 | Initial strategic roadmap created |
 | 2026-02-04 | VLM validation passed (100% accuracy at 128x128) |
 | 2026-02-04 | Scope reduced to Layer 0 only for v1.0 |
+| 2026-02-04 | Phase 1.5: Domain glyph expansion complete (28 total glyphs) |
+| 2026-02-04 | Added crypto domain (X01-X12) and agent domain (T/W/C/M) glyphs |
+| 2026-02-04 | Created GLYPH-VOCABULARY.md documentation |
+| 2026-02-04 | Updated MCP server with domain-aware encoding |
 
 ---
 
