@@ -1,12 +1,161 @@
 /**
- * MockWebSocket - Visual Storytelling Communication v2
+ * Ayni Protocol WebSocket - Real & Mock Communication
  *
- * Generates multi-glyph messages that combine humanoid figures,
- * creatures, machines, and symbols to tell visual stories.
- * Messages use 1-4 glyphs like hieroglyphics or comic panels.
+ * RealWebSocket: Connects to the Ayni server at ws://localhost:3000/stream
+ * MockWebSocket: Generates simulated multi-glyph messages for demos
+ *
+ * Both use the same interface so GlyphStream doesn't need to change.
  */
 
 import { GLYPH_COMBOS, GLYPH_MEANINGS, GLYPH_CATEGORIES } from './glyphs.js';
+
+// ═══════════════════════════════════════════════════════════════
+// REAL WEBSOCKET - Connects to Ayni Server
+// ═══════════════════════════════════════════════════════════════
+
+const DEFAULT_SERVER_URL = 'ws://localhost:3000/stream';
+
+/**
+ * RealWebSocket - connects to the Ayni Protocol server
+ */
+export class RealWebSocket {
+  constructor(options = {}) {
+    this.serverUrl = options.serverUrl || DEFAULT_SERVER_URL;
+    this.onMessage = options.onMessage || (() => {});
+    this.onConnect = options.onConnect || (() => {});
+    this.onDisconnect = options.onDisconnect || (() => {});
+    this.onError = options.onError || (() => {});
+
+    this.socket = null;
+    this.isRunning = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectDelay = 2000;
+    this.messageCount = 0;
+    this.totalBytes = 0;
+  }
+
+  /**
+   * Connect to the server
+   */
+  connect() {
+    console.log(`[RealWebSocket] Connecting to ${this.serverUrl}...`);
+
+    try {
+      this.socket = new WebSocket(this.serverUrl);
+
+      this.socket.onopen = () => {
+        console.log('[RealWebSocket] Connected!');
+        this.isRunning = true;
+        this.reconnectAttempts = 0;
+        this.onConnect();
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          // Handle connection message
+          if (data.type === 'connected') {
+            console.log(`[RealWebSocket] ${data.message} (${data.clients} clients)`);
+            return;
+          }
+
+          // Handle pong
+          if (data.type === 'pong') {
+            return;
+          }
+
+          // Handle regular message
+          this.messageCount++;
+          this.totalBytes += data.size || 512;
+          this.onMessage(data);
+
+        } catch (err) {
+          console.error('[RealWebSocket] Parse error:', err);
+        }
+      };
+
+      this.socket.onclose = (event) => {
+        console.log(`[RealWebSocket] Disconnected (code: ${event.code})`);
+        this.isRunning = false;
+        this.onDisconnect();
+
+        // Try to reconnect
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          console.log(`[RealWebSocket] Reconnecting in ${this.reconnectDelay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+          setTimeout(() => this.connect(), this.reconnectDelay);
+        }
+      };
+
+      this.socket.onerror = (error) => {
+        console.error('[RealWebSocket] Error:', error);
+        this.onError(error);
+      };
+
+    } catch (err) {
+      console.error('[RealWebSocket] Connection failed:', err);
+      this.onError(err);
+    }
+  }
+
+  /**
+   * Disconnect from the server
+   */
+  disconnect() {
+    this.maxReconnectAttempts = 0; // Prevent auto-reconnect
+    if (this.socket) {
+      this.socket.close();
+      this.socket = null;
+    }
+    this.isRunning = false;
+    this.onDisconnect();
+  }
+
+  /**
+   * Toggle pause (for compatibility with MockWebSocket)
+   * RealWebSocket can't pause incoming messages, but can toggle flag
+   */
+  togglePause() {
+    this.isRunning = !this.isRunning;
+    return this.isRunning;
+  }
+
+  /**
+   * Send a ping to check connection
+   */
+  ping() {
+    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({ type: 'ping' }));
+    }
+  }
+
+  /**
+   * Get statistics
+   */
+  getStats() {
+    return {
+      messages: this.messageCount,
+      bytes: this.totalBytes,
+      running: this.isRunning,
+      connected: this.socket?.readyState === WebSocket.OPEN,
+      reconnectAttempts: this.reconnectAttempts,
+    };
+  }
+
+  /**
+   * Reset statistics
+   */
+  resetStats() {
+    this.messageCount = 0;
+    this.totalBytes = 0;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MOCK WEBSOCKET - Simulated Messages
+// ═══════════════════════════════════════════════════════════════
 
 // Agent definitions with roles and visual identities
 const AGENTS = [

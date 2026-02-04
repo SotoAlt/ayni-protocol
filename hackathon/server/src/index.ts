@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import websocket from '@fastify/websocket';
 import { serverConfig } from './config.js';
 import { encodeRoute } from './routes/encode.js';
 import { decodeRoute } from './routes/decode.js';
@@ -8,6 +9,7 @@ import { sendRoute } from './routes/send.js';
 import { verifyRoute } from './routes/verify.js';
 import { glyphsRoute } from './routes/glyphs.js';
 import { hashRoute } from './routes/hash.js';
+import { streamRoute } from './routes/stream.js';
 
 const fastify = Fastify({
   logger: true,
@@ -17,6 +19,9 @@ const fastify = Fastify({
 await fastify.register(cors, {
   origin: true,
 });
+
+// Register WebSocket plugin
+await fastify.register(websocket);
 
 // Health check
 fastify.get('/health', async () => {
@@ -39,6 +44,9 @@ fastify.get('/', async () => {
       'POST /send': 'Relay + attest message (0.001 MON)',
       'GET /verify/:hash': 'Check if message was attested (free)',
       'GET /glyphs': 'List all registered glyphs (free)',
+      'WS /stream': 'WebSocket for real-time message stream (free)',
+      'GET /stream/stats': 'Get stream client count (free)',
+      'POST /stream/broadcast': 'Manually broadcast message (free)',
     },
     docs: 'https://docs.ayni-protocol.com',
     github: 'https://github.com/ayni-protocol/ayni-server',
@@ -53,6 +61,7 @@ fastify.register(sendRoute);
 fastify.register(verifyRoute);
 fastify.register(glyphsRoute);
 fastify.register(hashRoute);
+fastify.register(streamRoute);
 
 // Start server
 const start = async () => {

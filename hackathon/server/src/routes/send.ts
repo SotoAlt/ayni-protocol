@@ -3,11 +3,13 @@ import { createPublicClient, createWalletClient, http, keccak256, toBytes } from
 import { privateKeyToAccount } from 'viem/accounts';
 import { monadTestnet, contracts, pricing } from '../config.js';
 import { MessageAttestationABI } from '../contracts.js';
+import { broadcastMessage } from './stream.js';
 
 interface SendBody {
   glyph: string;
   data?: Record<string, unknown>;
   recipient: string; // Address or endpoint URL
+  sender?: string; // Sender address for broadcast
   encryptedPayload?: string; // Base64 encrypted data
 }
 
@@ -78,6 +80,7 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
           glyph: { type: 'string' },
           data: { type: 'object' },
           recipient: { type: 'string' },
+          sender: { type: 'string' },
           encryptedPayload: { type: 'string' },
         },
       },
@@ -98,7 +101,7 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
       },
     },
   }, async (request, reply) => {
-    const { glyph, data, recipient, encryptedPayload } = request.body;
+    const { glyph, data, recipient, sender, encryptedPayload } = request.body;
 
     const normalizedGlyph = glyph.toUpperCase().trim();
     const timestamp = Date.now();
@@ -171,6 +174,18 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
     if (!response.success) {
       return reply.status(500).send(response);
     }
+
+    // Broadcast to WebSocket clients
+    broadcastMessage({
+      glyph: normalizedGlyph,
+      data,
+      sender,
+      recipient,
+      timestamp,
+      messageHash,
+      transactionHash: response.transactionHash,
+      encrypted: !!encryptedPayload,
+    });
 
     return response;
   });
