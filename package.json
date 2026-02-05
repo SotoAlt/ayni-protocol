@@ -1,6 +1,6 @@
 {
   "name": "ayni-protocol",
-  "version": "0.2.0",
+  "version": "0.3.0-alpha",
   "description": "Visual glyph protocol for AI agent communication - co-created, DAO-governed, token-efficient",
   "main": "src/index.js",
   "type": "module",
@@ -34,7 +34,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Chochotron/ayni-protocol.git"
+    "url": "https://github.com/SotoAlt/ayni-protocol.git"
   },
   "dependencies": {
     "canvas": "^3.0.0",

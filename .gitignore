@@ -60,13 +60,16 @@ __pycache__/
 venv/
 env/
 
+# Data files (SQLite, JSON logs)
+packages/server/data/
+
 # Smart contracts / Foundry
 artifacts/
 cache/
 typechain/
 deployments/localhost/
-hackathon/contracts/out/
-hackathon/contracts/cache/
+packages/contracts/out/
+packages/contracts/cache/
 
 # Claude Code
 .claude/

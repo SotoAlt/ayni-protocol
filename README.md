@@ -17,7 +17,22 @@ Ayni is a protocol for AI agents to communicate using visual glyphs instead of n
 
 ## Quick Start
 
-### Install
+### MCP Server (for AI agents)
+```json
+{
+  "mcpServers": {
+    "ayni": {
+      "command": "npx",
+      "args": ["@ayni-protocol/mcp"],
+      "env": {
+        "AYNI_SERVER_URL": "http://localhost:3000"
+      }
+    }
+  }
+}
+```
+
+### SDK (for applications)
 ```bash
 npm install ayni-protocol
 ```
@@ -139,18 +154,21 @@ cd frontend && npm run dev
 
 ```
 ayni-protocol/
-├── src/
-│   ├── core/           # Glyph generation & rendering
-│   ├── protocol/       # Encoder, Decoder, Agent
-│   └── index.js        # Main exports
-├── frontend/
-│   ├── js/glyphs.js    # 16x16 patterns
-│   └── js/textileRiver.js  # River visualization
-├── docs/
-│   ├── WHY-AYNI.md     # Value proposition
-│   ├── PROTOCOL.md     # Full spec
-│   └── ...
-└── tests/
+├── src/                 # Core protocol (npm: ayni-protocol)
+│   ├── core/            # Glyph generation & rendering
+│   ├── protocol/        # Encoder, Decoder, Agent
+│   └── index.js         # Main exports
+├── packages/
+│   ├── server/          # API Server (Fastify + SQLite)
+│   ├── mcp/             # MCP Server (npm: @ayni-protocol/mcp)
+│   ├── sdk/             # TypeScript SDK
+│   ├── skill/           # Claude Skill (SKILL.md)
+│   ├── contracts/       # Solidity (Foundry)
+│   └── docs/            # Extended documentation
+├── frontend/            # Glyph River visualization
+├── deploy/              # Deployment scripts
+├── docs/                # Core docs
+└── tests/               # Test suite
 ```
 
 ---
@@ -229,6 +247,8 @@ MIT
 
 - **Documentation:** [docs/](docs/)
 - **WHY Ayni?:** [docs/WHY-AYNI.md](docs/WHY-AYNI.md)
+- **MCP Server:** [@ayni-protocol/mcp](https://www.npmjs.com/package/@ayni-protocol/mcp)
+- **Skill MD:** [packages/skill/SKILL.md](packages/skill/SKILL.md)
 
 ---
 

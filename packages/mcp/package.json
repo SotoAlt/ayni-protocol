@@ -1,0 +1,53 @@
+{
+  "name": "@ayni-protocol/mcp",
+  "version": "0.3.0-alpha",
+  "description": "MCP server for Ayni Protocol - visual coordination tools for AI agents",
+  "type": "module",
+  "main": "dist/server.js",
+  "bin": {
+    "ayni-mcp": "./dist/server.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsx watch server.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.5.4",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.4"
+  },
+  "license": "MIT",
+  "author": "Rodrigo Soto <r.sotoaltamirano@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SotoAlt/ayni-protocol.git",
+    "directory": "packages/mcp"
+  },
+  "homepage": "https://github.com/SotoAlt/ayni-protocol/tree/main/packages/mcp",
+  "keywords": [
+    "mcp",
+    "ai-agents",
+    "glyphs",
+    "coordination",
+    "ayni",
+    "visual-protocol",
+    "model-context-protocol"
+  ],
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

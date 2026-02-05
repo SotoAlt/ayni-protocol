@@ -1,0 +1,27 @@
+[Unit]
+Description=Ayni Protocol Server
+After=network.target
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/ayni-protocol/packages/server
+ExecStart=/usr/bin/node dist/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ayni-server
+
+EnvironmentFile=/home/deploy/ayni/.env
+
+# Security hardening
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/deploy/ayni-protocol/packages/server/data
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target
