@@ -15,7 +15,13 @@ import { MockWebSocket, RealWebSocket } from './websocket.js';
 import { GLYPH_MEANINGS, CATEGORY_COLORS } from './glyphs.js';
 
 // Configuration
-const SERVER_URL = 'ws://localhost:3000/stream';
+const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const SERVER_URL = (window.location.hostname !== 'localhost')
+  ? `${WS_PROTOCOL}//${window.location.host}/stream`
+  : 'ws://localhost:3000/stream';
+const API_BASE = (window.location.hostname !== 'localhost')
+  ? `${window.location.protocol}//${window.location.host}`
+  : 'http://localhost:3000';
 const CONNECTION_TIMEOUT = 3000; // 3 seconds to connect before fallback
 
 const debug = msg => {
@@ -26,8 +32,6 @@ const debug = msg => {
 let stream, ws;
 let currentMode = 'auto'; // 'real', 'mock', or 'auto'
 let knowledgePollTimer = null;
-
-const API_BASE = 'http://localhost:3000';
 
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + 'B';

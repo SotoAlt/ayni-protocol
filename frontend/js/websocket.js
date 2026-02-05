@@ -14,7 +14,7 @@ import { GLYPH_COMBOS, GLYPH_MEANINGS, GLYPH_CATEGORIES } from './glyphs.js';
 // ═══════════════════════════════════════════════════════════════
 
 const DEFAULT_SERVER_URL = (typeof window !== 'undefined' && window.location.hostname !== 'localhost')
-  ? `ws://${window.location.host}/stream`
+  ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/stream`
   : 'ws://localhost:3000/stream';
 
 /**
