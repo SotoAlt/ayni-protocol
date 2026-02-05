@@ -84,10 +84,23 @@ db.exec(`
     use_count INTEGER NOT NULL DEFAULT 0
   );
 
+  CREATE TABLE IF NOT EXISTS agents (
+    address TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    service_url TEXT,
+    protocols TEXT NOT NULL DEFAULT '[]',
+    tier TEXT NOT NULL DEFAULT 'unverified',
+    wallet_address TEXT,
+    registered_at INTEGER NOT NULL,
+    last_seen INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_messages_glyph ON messages(glyph);
   CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender);
   CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
   CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
+  CREATE INDEX IF NOT EXISTS idx_agents_tier ON agents(tier);
+  CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);
 `);
 
 // Import existing JSON data on first run

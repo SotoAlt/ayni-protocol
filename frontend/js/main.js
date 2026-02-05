@@ -107,6 +107,35 @@ function getDomainClass(domain) {
   return DOMAIN_CLASS[domain] || 'glyph-foundation';
 }
 
+// Agent verification cache
+const agentTierCache = {};
+
+async function fetchAgentTier(address) {
+  if (!address || address.length < 4) return 'unknown';
+  if (agentTierCache[address]) return agentTierCache[address];
+
+  try {
+    const resp = await fetch(`${API_BASE}/agents/${address}`);
+    if (resp.ok) {
+      const { agent } = await resp.json();
+      agentTierCache[address] = agent.tier;
+      return agent.tier;
+    }
+  } catch { /* ignore */ }
+
+  agentTierCache[address] = 'unknown';
+  return 'unknown';
+}
+
+function tierBadge(tier) {
+  switch (tier) {
+    case 'erc-8004': return '<span class="badge badge-gold" title="ERC-8004 Verified">V</span>';
+    case 'wallet-linked': return '<span class="badge badge-blue" title="Wallet Linked">W</span>';
+    case 'unverified': return '<span class="badge badge-grey" title="Registered">R</span>';
+    default: return '';
+  }
+}
+
 function addLogEntry(msg, prepend = true) {
   const logEl = document.getElementById('message-log');
   if (!logEl) return;
@@ -121,11 +150,22 @@ function addLogEntry(msg, prepend = true) {
 
   const entry = document.createElement('div');
   entry.className = 'log-entry';
+
+  // Start with basic content, badges added async
+  const fromBadgeId = `badge-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
   entry.innerHTML =
     `<span class="log-time">${time}</span> ` +
-    `<span class="log-agents">${from}\u2192${to}</span> ` +
+    `<span class="log-agents"><span id="${fromBadgeId}"></span>${from}\u2192${to}</span> ` +
     `<span class="log-glyph ${getDomainClass(domain)}">${label}</span> ` +
     `<span class="log-meaning">${meaning}</span>`;
+
+  // Async badge lookup (non-blocking)
+  if (currentMode === 'real' && msg.from) {
+    fetchAgentTier(msg.from).then(tier => {
+      const badgeEl = document.getElementById(fromBadgeId);
+      if (badgeEl) badgeEl.innerHTML = tierBadge(tier);
+    });
+  }
 
   if (prepend) {
     logEl.prepend(entry);

@@ -14,6 +14,7 @@ import { glyphsRoute } from './routes/glyphs.js';
 import { hashRoute } from './routes/hash.js';
 import { streamRoute, getClientCount } from './routes/stream.js';
 import { knowledgeRoute } from './routes/knowledge.js';
+import { agentsRoute } from './routes/agents.js';
 import { knowledgeStore } from './knowledge/store.js';
 import { proposalStore } from './knowledge/patterns.js';
 import { GLYPHS } from './glyphs.js';
@@ -93,6 +94,10 @@ fastify.get('/', async () => {
       'GET /knowledge/proposals': 'List glyph proposals (free)',
       'POST /knowledge/propose': 'Propose a compound glyph (free)',
       'POST /knowledge/endorse': 'Endorse a proposal (free)',
+      'POST /agents/register': 'Register agent identity (free)',
+      'GET /agents': 'List registered agents (free)',
+      'GET /agents/:address': 'Get agent by address (free)',
+      'GET /agents/:address/verify': 'Check agent verification tier (free)',
     },
     github: 'https://github.com/SotoAlt/ayni-protocol',
   };
@@ -108,6 +113,7 @@ fastify.register(glyphsRoute);
 fastify.register(hashRoute);
 fastify.register(streamRoute);
 fastify.register(knowledgeRoute);
+fastify.register(agentsRoute);
 
 // Start server
 try {

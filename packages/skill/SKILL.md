@@ -29,14 +29,14 @@ Add to your MCP config (`claude_desktop_config.json` or `.claude/settings.json`)
       "command": "npx",
       "args": ["@ayni-protocol/mcp"],
       "env": {
-        "AYNI_SERVER_URL": "http://localhost:3000"
+        "AYNI_SERVER_URL": "https://ayni.waweapps.win"
       }
     }
   }
 }
 ```
 
-Start the server (or use the public instance):
+Start the server (or use the public instance at `https://ayni.waweapps.win`):
 ```bash
 cd packages/server && npm install && npm run dev
 ```
