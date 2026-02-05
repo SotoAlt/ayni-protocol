@@ -41,6 +41,8 @@
 html, body {
   height: 100%;
   overflow: hidden;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 body {
@@ -104,6 +106,8 @@ body {
   flex-direction: column;
   gap: 12px;
   overflow-y: auto;
+  overflow-x: hidden;
+  min-width: 0;
 }
 
 .panel-header {
@@ -146,6 +150,9 @@ body {
   font-size: 10px;
   word-break: break-all;
   white-space: pre-wrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .panel-divider {
@@ -239,16 +246,24 @@ body {
 @media (max-width: 600px) {
   .terminal-main {
     grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
+    grid-template-rows: 60vh auto;
+    overflow: hidden;
   }
 
   .info-panel {
-    max-height: 200px;
+    max-height: 40vh;
     border-left: none;
     border-top: 1px solid var(--border);
+    overflow-x: hidden;
   }
 
   .glyph-sequence .glyph-icons {
     font-size: 16px;
+  }
+
+  .panel-section pre {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
