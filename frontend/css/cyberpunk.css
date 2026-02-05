@@ -183,6 +183,68 @@ body {
 }
 
 /* ============================================
+   MESSAGE LOG
+   ============================================ */
+.panel-section-log {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.message-log {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 10px;
+  line-height: 1.6;
+  min-height: 60px;
+}
+
+.message-log::-webkit-scrollbar {
+  width: 4px;
+}
+
+.message-log::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+.message-log::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.log-entry {
+  padding: 1px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--fg-dim);
+}
+
+.log-entry .log-time {
+  color: var(--fg-muted);
+}
+
+.log-entry .log-agents {
+  color: var(--fg-dim);
+}
+
+.log-entry .log-glyph {
+  font-weight: 700;
+}
+
+.log-entry .log-glyph.glyph-foundation { color: var(--color-humanoid); }
+.log-entry .log-glyph.glyph-crypto { color: var(--color-crypto); }
+.log-entry .log-glyph.glyph-agent { color: var(--color-agent); }
+.log-entry .log-glyph.glyph-state { color: var(--color-state); }
+.log-entry .log-glyph.glyph-error { color: var(--color-error); }
+.log-entry .log-glyph.glyph-payment { color: var(--color-payment); }
+
+.log-entry .log-meaning {
+  color: var(--fg-muted);
+  font-style: italic;
+}
+
+/* ============================================
    CONTROLS
    ============================================ */
 .panel-controls {

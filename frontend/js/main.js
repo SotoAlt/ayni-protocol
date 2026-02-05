@@ -24,10 +24,60 @@ const API_BASE = (window.location.hostname !== 'localhost')
   : 'http://localhost:3000';
 const CONNECTION_TIMEOUT = 3000; // 3 seconds to connect before fallback
 
-const debug = msg => {
+const MAX_LOG_ENTRIES = 200;
+
+// Glyph ID → visual mapping (mirrors server getVisual)
+const GLYPH_VISUAL = {
+  Q01: { glyphs: ['asking', 'database'], category: 'humanoid', meaning: 'Query Database', domain: 'foundation' },
+  R01: { glyphs: ['giving', 'checkmark'], category: 'humanoid', meaning: 'Response Success', domain: 'foundation' },
+  E01: { glyphs: ['waiting', 'x'], category: 'humanoid', meaning: 'Error', domain: 'foundation' },
+  A01: { glyphs: ['running', 'lightning'], category: 'humanoid', meaning: 'Execute Action', domain: 'foundation' },
+  Q02: { glyphs: ['asking', 'eye'], category: 'humanoid', meaning: 'Search', domain: 'foundation' },
+  Q03: { glyphs: ['asking', 'server'], category: 'humanoid', meaning: 'Query API', domain: 'foundation' },
+  R02: { glyphs: ['giving', 'database'], category: 'humanoid', meaning: 'Data Response', domain: 'foundation' },
+  R03: { glyphs: ['celebrating', 'checkmark'], category: 'humanoid', meaning: 'Task Complete', domain: 'foundation' },
+  E02: { glyphs: ['waiting', 'clock', 'x'], category: 'humanoid', meaning: 'Timeout Error', domain: 'foundation' },
+  E03: { glyphs: ['waiting', 'lock', 'x'], category: 'humanoid', meaning: 'Permission Denied', domain: 'foundation' },
+  A02: { glyphs: ['giving', 'robot'], category: 'humanoid', meaning: 'Delegate Task', domain: 'foundation' },
+  A03: { glyphs: ['running', 'database', 'arrow'], category: 'humanoid', meaning: 'Update Data', domain: 'foundation' },
+  S01: { glyphs: ['thinking', 'clock'], category: 'humanoid', meaning: 'Processing', domain: 'state' },
+  S02: { glyphs: ['waiting'], category: 'humanoid', meaning: 'Idle', domain: 'state' },
+  P01: { glyphs: ['running', 'coin'], category: 'humanoid', meaning: 'Payment Sent', domain: 'payment' },
+  P02: { glyphs: ['celebrating', 'coin', 'checkmark'], category: 'humanoid', meaning: 'Payment Confirmed', domain: 'payment' },
+  X01: { glyphs: ['running', 'swap'], category: 'crypto', meaning: 'Token Swap', domain: 'crypto' },
+  X02: { glyphs: ['thinking', 'stake'], category: 'crypto', meaning: 'Stake', domain: 'crypto' },
+  X03: { glyphs: ['celebrating', 'stake'], category: 'crypto', meaning: 'Unstake', domain: 'crypto' },
+  X04: { glyphs: ['running', 'arrow'], category: 'crypto', meaning: 'Transfer', domain: 'crypto' },
+  X05: { glyphs: ['thinking', 'checkmark'], category: 'crypto', meaning: 'Approve', domain: 'crypto' },
+  X06: { glyphs: ['celebrating', 'harvest'], category: 'crypto', meaning: 'Harvest Rewards', domain: 'crypto' },
+  X07: { glyphs: ['thinking', 'vote'], category: 'crypto', meaning: 'Vote', domain: 'crypto' },
+  X08: { glyphs: ['celebrating', 'arrow'], category: 'crypto', meaning: 'Propose', domain: 'crypto' },
+  X09: { glyphs: ['running', 'bridge'], category: 'crypto', meaning: 'Bridge', domain: 'crypto' },
+  X10: { glyphs: ['thinking', 'limit'], category: 'crypto', meaning: 'Limit Order', domain: 'crypto' },
+  X11: { glyphs: ['waiting', 'shield'], category: 'crypto', meaning: 'Stop Loss', domain: 'crypto' },
+  X12: { glyphs: ['running', 'checkmark'], category: 'crypto', meaning: 'Trade Executed', domain: 'crypto' },
+  T01: { glyphs: ['running', 'task'], category: 'agent', meaning: 'Assign Task', domain: 'agent' },
+  T02: { glyphs: ['celebrating', 'checkmark'], category: 'agent', meaning: 'Task Complete', domain: 'agent' },
+  T03: { glyphs: ['waiting', 'x'], category: 'agent', meaning: 'Task Failed', domain: 'agent' },
+  W01: { glyphs: ['running', 'lightning'], category: 'agent', meaning: 'Start Workflow', domain: 'agent' },
+  W02: { glyphs: ['thinking', 'checkpoint'], category: 'agent', meaning: 'Checkpoint', domain: 'agent' },
+  W03: { glyphs: ['waiting', 'clock'], category: 'agent', meaning: 'Pause', domain: 'agent' },
+  C01: { glyphs: ['running', 'lightning'], category: 'agent', meaning: 'Notify', domain: 'agent' },
+  C02: { glyphs: ['celebrating', 'broadcast'], category: 'agent', meaning: 'Broadcast', domain: 'agent' },
+  C03: { glyphs: ['thinking', 'checkmark'], category: 'agent', meaning: 'Acknowledge', domain: 'agent' },
+  M01: { glyphs: ['thinking', 'heartbeat'], category: 'agent', meaning: 'Heartbeat', domain: 'agent' },
+  M02: { glyphs: ['thinking', 'log'], category: 'agent', meaning: 'Log', domain: 'agent' },
+  M03: { glyphs: ['waiting', 'alert'], category: 'agent', meaning: 'Alert', domain: 'agent' },
+};
+
+function getVisual(glyphId) {
+  return GLYPH_VISUAL[glyphId] || { glyphs: [glyphId.toLowerCase()], category: 'symbol', meaning: glyphId, domain: 'foundation' };
+}
+
+function debug(msg) {
   const el = document.getElementById('debug-info');
   if (el) el.textContent = msg;
-};
+}
 
 let stream, ws;
 let currentMode = 'auto'; // 'real', 'mock', or 'auto'
@@ -36,6 +86,104 @@ let knowledgePollTimer = null;
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + 'B';
   return (bytes / 1024).toFixed(1) + 'KB';
+}
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return d.getHours().toString().padStart(2, '0') + ':' +
+    d.getMinutes().toString().padStart(2, '0');
+}
+
+const DOMAIN_CLASS = {
+  foundation: 'glyph-foundation',
+  crypto: 'glyph-crypto',
+  agent: 'glyph-agent',
+  state: 'glyph-state',
+  error: 'glyph-error',
+  payment: 'glyph-payment',
+};
+
+function getDomainClass(domain) {
+  return DOMAIN_CLASS[domain] || 'glyph-foundation';
+}
+
+function addLogEntry(msg, prepend = true) {
+  const logEl = document.getElementById('message-log');
+  if (!logEl) return;
+
+  const visual = msg.glyphId ? getVisual(msg.glyphId) : null;
+  const domain = visual ? visual.domain : (msg.category || 'foundation');
+  const meaning = msg.meaning || (visual ? visual.meaning : '');
+  const label = msg.glyphId || (msg.glyphs ? msg.glyphs.join('+') : '?');
+  const time = formatTime(msg.timestamp || Date.now());
+  const from = (msg.from || '').substring(0, 8);
+  const to = (msg.to || '').substring(0, 8);
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML =
+    `<span class="log-time">${time}</span> ` +
+    `<span class="log-agents">${from}\u2192${to}</span> ` +
+    `<span class="log-glyph ${getDomainClass(domain)}">${label}</span> ` +
+    `<span class="log-meaning">${meaning}</span>`;
+
+  if (prepend) {
+    logEl.prepend(entry);
+  } else {
+    logEl.appendChild(entry);
+  }
+
+  while (logEl.children.length > MAX_LOG_ENTRIES) {
+    logEl.removeChild(logEl.lastChild);
+  }
+}
+
+function handleMessage(msg) {
+  stream.addMessage(msg);
+  addLogEntry(msg);
+}
+
+let historyCounter = 0;
+
+function serverMsgToFrontend(row) {
+  const visual = getVisual(row.glyph);
+  return {
+    id: `hist-${row.timestamp}-${++historyCounter}`,
+    from: row.sender,
+    to: row.recipient,
+    glyphs: visual.glyphs,
+    glyph: visual.glyphs[0],
+    glyphId: row.glyph,
+    category: visual.category,
+    meaning: visual.meaning,
+    timestamp: row.timestamp,
+    encrypted: false,
+    size: visual.glyphs.length * 512,
+    messageHash: row.messageHash,
+    data: row.data,
+  };
+}
+
+async function fetchHistory() {
+  try {
+    const resp = await fetch(`${API_BASE}/knowledge/messages?limit=100`);
+    if (!resp.ok) return;
+    const { messages } = await resp.json();
+    if (!messages?.length) return;
+
+    // Reverse to oldest-first so they appear in chronological order
+    const chronological = messages.slice().reverse();
+
+    for (const row of chronological) {
+      const msg = serverMsgToFrontend(row);
+      stream.addMessage(msg);
+      addLogEntry(msg, false);
+    }
+
+    debug(`LIVE - ${messages.length} historical + streaming`);
+  } catch (e) {
+    console.warn('[Main] Failed to fetch history:', e);
+  }
 }
 
 function updatePanel(message, stats) {
@@ -75,10 +223,11 @@ function connectWithFallback() {
 
     const realWs = new RealWebSocket({
       serverUrl: SERVER_URL,
-      onMessage: msg => stream.addMessage(msg),
+      onMessage: msg => handleMessage(msg),
       onConnect: () => {
         debug('LIVE - Server connected');
         currentMode = 'real';
+        fetchHistory();
         resolve(realWs);
       },
       onDisconnect: () => {
@@ -108,7 +257,7 @@ function createMockWebSocket() {
   currentMode = 'mock';
 
   return new MockWebSocket({
-    onMessage: msg => stream.addMessage(msg),
+    onMessage: msg => handleMessage(msg),
     onConnect: () => debug('DEMO - Streaming mock data'),
     onDisconnect: () => debug('DEMO - Paused')
   });
@@ -140,8 +289,8 @@ async function init() {
       // Force real mode (no fallback)
       ws = new RealWebSocket({
         serverUrl: SERVER_URL,
-        onMessage: msg => stream.addMessage(msg),
-        onConnect: () => debug('LIVE - Server connected'),
+        onMessage: msg => handleMessage(msg),
+        onConnect: () => { debug('LIVE - Server connected'); fetchHistory(); },
         onDisconnect: () => debug('LIVE - Disconnected'),
         onError: (err) => debug('LIVE - Error: ' + err)
       });
@@ -167,6 +316,8 @@ async function init() {
 
   document.getElementById('btn-clear')?.addEventListener('click', () => {
     stream.clear();
+    const logEl = document.getElementById('message-log');
+    if (logEl) logEl.innerHTML = '';
     debug('Cleared');
   });
 

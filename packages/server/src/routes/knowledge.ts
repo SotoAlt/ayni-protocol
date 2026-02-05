@@ -10,6 +10,11 @@ import { knowledgeStore } from '../knowledge/store.js';
 import { proposalStore, ENDORSEMENT_THRESHOLD } from '../knowledge/patterns.js';
 import { requireAdmin } from '../middleware/admin.js';
 
+function clampInt(value: string | undefined, min: number, max: number, fallback: number): number {
+  const parsed = parseInt(value || '', 10);
+  return Math.min(Math.max(Number.isNaN(parsed) ? fallback : parsed, min), max);
+}
+
 export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get('/knowledge', async () => {
     return {
@@ -17,6 +22,26 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
       compounds: proposalStore.getCompounds(),
     };
   });
+
+  fastify.get<{ Querystring: { limit?: string; offset?: string } }>(
+    '/knowledge/messages',
+    {
+      schema: {
+        querystring: {
+          type: 'object',
+          properties: {
+            limit: { type: 'string' },
+            offset: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const limit = clampInt(request.query.limit, 1, 200, 50);
+      const offset = clampInt(request.query.offset, 0, Infinity, 0);
+      return knowledgeStore.getRecentMessages(limit, offset);
+    }
+  );
 
   fastify.get('/knowledge/stats', async () => {
     const stats = knowledgeStore.stats();

@@ -47,7 +47,7 @@ export interface KnowledgeGraph {
   sequences: Record<string, SequenceKnowledge>;
 }
 
-interface RecentMessage {
+interface SequenceEntry {
   glyph: string;
   sender: string;
   recipient: string;
@@ -98,6 +98,10 @@ const stmts = {
   clearAgents: db.prepare('DELETE FROM knowledge_agents'),
   clearSequences: db.prepare('DELETE FROM sequences'),
   clearMessages: db.prepare('DELETE FROM messages'),
+  recentMessages: db.prepare(
+    'SELECT glyph, sender, recipient, data, timestamp, message_hash FROM messages ORDER BY timestamp DESC LIMIT ? OFFSET ?'
+  ),
+  totalMessages: db.prepare('SELECT COUNT(*) as total FROM messages'),
 };
 
 function parseJsonColumn<T>(value: string | undefined, fallback: T): T {
@@ -130,7 +134,7 @@ function rowToGlyphKnowledge(row: any): GlyphKnowledge {
 }
 
 export class KnowledgeStore {
-  private recentMessages: RecentMessage[] = [];
+  private sequenceBuffer: SequenceEntry[] = [];
 
   recordMessage(msg: RecordedMessage): void {
     const glyph = msg.glyph;
@@ -177,12 +181,12 @@ export class KnowledgeStore {
   }
 
   private detectSequences(glyph: string, sender: string, recipient: string, timestamp: number): void {
-    this.recentMessages.push({ glyph, sender, recipient, timestamp });
+    this.sequenceBuffer.push({ glyph, sender, recipient, timestamp });
 
     const cutoff = timestamp - SEQUENCE_WINDOW_MS;
-    this.recentMessages = this.recentMessages.filter((m) => m.timestamp >= cutoff);
+    this.sequenceBuffer = this.sequenceBuffer.filter((m) => m.timestamp >= cutoff);
 
-    const recent = this.recentMessages;
+    const recent = this.sequenceBuffer;
     for (let i = recent.length - 2; i >= 0; i--) {
       const prev = recent[i];
       const samePair =
@@ -318,12 +322,40 @@ export class KnowledgeStore {
     };
   }
 
+  getRecentMessages(limit = 50, offset = 0): {
+    messages: Array<{
+      glyph: string;
+      sender: string;
+      recipient: string;
+      data: Record<string, unknown> | null;
+      timestamp: number;
+      messageHash: string | null;
+    }>;
+    total: number;
+    limit: number;
+    offset: number;
+  } {
+    const rows = stmts.recentMessages.all(limit, offset) as any[];
+    const total = (stmts.totalMessages.get() as any)?.total || 0;
+
+    const messages = rows.map((row) => ({
+      glyph: row.glyph,
+      sender: row.sender,
+      recipient: row.recipient,
+      data: row.data ? JSON.parse(row.data) : null,
+      timestamp: row.timestamp,
+      messageHash: row.message_hash || null,
+    }));
+
+    return { messages, total, limit, offset };
+  }
+
   reset(): void {
     stmts.clearMessages.run();
     stmts.clearGlyphs.run();
     stmts.clearAgents.run();
     stmts.clearSequences.run();
-    this.recentMessages = [];
+    this.sequenceBuffer = [];
   }
 }
 
