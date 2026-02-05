@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1-alpha] - 2026-02-05
+
+### Server
+
+- **Fix: keyword matcher word-boundary bug** — `textToGlyph` used raw substring matching (`String.includes`), causing false positives (e.g. "tokens" matched keyword "ok"). Now uses `\b` regex word boundaries for accurate keyword matching.
+
+### Demo
+
+- **New: Real agent E2E test** (`packages/demo/agent-e2e.ts`) — 29 tests across 5 scenarios exercising the protocol as actual agents would:
+  1. Encode & decode lifecycle (round-trip, batch, cross-domain)
+  2. Multi-agent conversation via `POST /send` (knowledge recording, sequence detection)
+  3. Knowledge recall & query
+  4. Governance: propose → endorse → accept compound glyph
+  5. Error handling & edge cases
+
+  Run: `npx tsx packages/demo/agent-e2e.ts https://ayni.waweapps.win`
+
 ## [0.3.0-alpha] - 2026-02-04
 
 ### Repository

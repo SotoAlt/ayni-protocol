@@ -440,7 +440,8 @@ export function textToGlyph(text: string): string | null {
 
   for (const [id, def] of Object.entries(GLYPHS)) {
     for (const keyword of def.keywords) {
-      if (lower.includes(keyword)) {
+      const pattern = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+      if (pattern.test(lower)) {
         return id;
       }
     }

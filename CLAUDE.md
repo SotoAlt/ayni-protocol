@@ -4,7 +4,7 @@
 
 **Ayni** is a crypto-native coordination layer for AI agents using compact glyph identifiers instead of natural language. Named after the Quechua word for "reciprocity."
 
-**Version:** 0.3.0-alpha
+**Version:** 0.3.1-alpha
 
 **Core Value Proposition:**
 - 50-70% token savings vs natural language
