@@ -56,6 +56,7 @@ export function broadcastMessage(message: BroadcastMessage): void {
     messageHash: message.messageHash,
     transactionHash: message.transactionHash,
     data: message.data,
+    glyphId: message.glyph,
   };
 
   const payload = JSON.stringify(frontendMessage);
