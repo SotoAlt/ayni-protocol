@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
 import { WebSocket } from 'ws';
+import { knowledgeStore } from '../knowledge/store.js';
 
 // Store connected WebSocket clients
 const clients = new Set<WebSocket>();
@@ -22,6 +23,34 @@ const GLYPH_MAPPING: Record<string, { glyphs: string[]; category: string; meanin
   S02: { glyphs: ['waiting'], category: 'humanoid', meaning: 'Idle' },
   P01: { glyphs: ['running', 'coin'], category: 'humanoid', meaning: 'Payment Sent' },
   P02: { glyphs: ['celebrating', 'coin', 'checkmark'], category: 'humanoid', meaning: 'Payment Confirmed' },
+
+  // Crypto domain (X01-X12)
+  X01: { glyphs: ['running', 'swap'], category: 'crypto', meaning: 'Token Swap' },
+  X02: { glyphs: ['thinking', 'stake'], category: 'crypto', meaning: 'Stake Tokens' },
+  X03: { glyphs: ['celebrating', 'stake'], category: 'crypto', meaning: 'Unstake' },
+  X04: { glyphs: ['running', 'arrow'], category: 'crypto', meaning: 'Transfer' },
+  X05: { glyphs: ['thinking', 'checkmark'], category: 'crypto', meaning: 'Approve' },
+  X06: { glyphs: ['celebrating', 'harvest'], category: 'crypto', meaning: 'Harvest Rewards' },
+  X07: { glyphs: ['thinking', 'vote'], category: 'crypto', meaning: 'Vote' },
+  X08: { glyphs: ['celebrating', 'arrow'], category: 'crypto', meaning: 'Propose' },
+  X09: { glyphs: ['running', 'bridge'], category: 'crypto', meaning: 'Bridge' },
+  X10: { glyphs: ['thinking', 'limit'], category: 'crypto', meaning: 'Limit Order' },
+  X11: { glyphs: ['waiting', 'shield'], category: 'crypto', meaning: 'Stop Loss' },
+  X12: { glyphs: ['running', 'checkmark'], category: 'crypto', meaning: 'Trade Executed' },
+
+  // Agent domain (T01-M03)
+  T01: { glyphs: ['running', 'task'], category: 'agent', meaning: 'Assign Task' },
+  T02: { glyphs: ['celebrating', 'checkmark'], category: 'agent', meaning: 'Task Complete' },
+  T03: { glyphs: ['waiting', 'x'], category: 'agent', meaning: 'Task Failed' },
+  W01: { glyphs: ['running', 'lightning'], category: 'agent', meaning: 'Start Workflow' },
+  W02: { glyphs: ['thinking', 'checkpoint'], category: 'agent', meaning: 'Checkpoint' },
+  W03: { glyphs: ['waiting', 'clock'], category: 'agent', meaning: 'Pause Workflow' },
+  C01: { glyphs: ['running', 'lightning'], category: 'agent', meaning: 'Notify' },
+  C02: { glyphs: ['celebrating', 'broadcast'], category: 'agent', meaning: 'Broadcast' },
+  C03: { glyphs: ['thinking', 'checkmark'], category: 'agent', meaning: 'Acknowledge' },
+  M01: { glyphs: ['thinking', 'heartbeat'], category: 'agent', meaning: 'Heartbeat' },
+  M02: { glyphs: ['thinking', 'log'], category: 'agent', meaning: 'Log' },
+  M03: { glyphs: ['waiting', 'alert'], category: 'agent', meaning: 'Alert' },
 };
 
 // Agent address to name mapping
@@ -87,6 +116,18 @@ export function broadcastMessage(message: BroadcastMessage): void {
   }
 
   console.log(`[Stream] Broadcast to ${clients.size} clients: ${message.glyph} ${fromName} -> ${toName}`);
+
+  // Record public (unencrypted) messages in knowledge store
+  if (!message.encrypted) {
+    knowledgeStore.recordMessage({
+      glyph: message.glyph,
+      sender: fromName,
+      recipient: toName,
+      data: message.data,
+      timestamp: message.timestamp,
+      messageHash: message.messageHash,
+    });
+  }
 }
 
 /**

@@ -387,6 +387,133 @@ const SCENARIOS = [
       { from: 'Eve', to: 'Alice', glyphs: ['giving', 'database'], delay: 400 },
       { from: 'Alice', to: 'Eve', glyphs: ['celebrating', 'checkmark'], delay: 200 }
     ]
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // CRYPTO/DeFi SCENARIOS
+  // ═══════════════════════════════════════════════════════════
+
+  // DeFi swap flow
+  {
+    name: 'defi-swap',
+    steps: [
+      { from: 'Alice', to: 'Dave', glyphs: ['swap'], delay: 100 },
+      { from: 'Dave', to: 'Alice', glyphs: ['thinking', 'clock'], delay: 400 },
+      { from: 'Dave', to: 'Alice', glyphs: ['swap', 'checkmark'], delay: 800 },
+      { from: 'Alice', to: 'Dave', glyphs: ['celebrating', 'coin'], delay: 200 }
+    ]
+  },
+
+  // Staking flow
+  {
+    name: 'staking',
+    steps: [
+      { from: 'Alice', to: 'Dave', glyphs: ['stake', 'coin'], delay: 100 },
+      { from: 'Dave', to: 'Eve', glyphs: ['lock', 'checkmark'], delay: 500 },
+      { from: 'Eve', to: 'Alice', glyphs: ['giving', 'checkmark'], delay: 300 },
+      { from: 'Alice', to: 'Bob', glyphs: ['harvest', 'coin'], delay: 2000 }
+    ]
+  },
+
+  // Bridge tokens cross-chain
+  {
+    name: 'bridge-tokens',
+    steps: [
+      { from: 'Alice', to: 'Dave', glyphs: ['bridge'], delay: 100 },
+      { from: 'Dave', to: 'Eve', glyphs: ['bridge', 'lock'], delay: 300 },
+      { from: 'Eve', to: 'Dave', glyphs: ['checkmark'], delay: 1500 },
+      { from: 'Dave', to: 'Alice', glyphs: ['bridge', 'checkmark'], delay: 200 }
+    ]
+  },
+
+  // DAO governance vote
+  {
+    name: 'dao-vote',
+    steps: [
+      { from: 'Alice', to: 'Bob', glyphs: ['vote'], delay: 100 },
+      { from: 'Bob', to: 'Carol', glyphs: ['vote'], delay: 200 },
+      { from: 'Carol', to: 'Dave', glyphs: ['vote'], delay: 200 },
+      { from: 'Eve', to: 'Alice', glyphs: ['vote', 'checkmark'], delay: 500 }
+    ]
+  },
+
+  // Limit order + stop loss
+  {
+    name: 'trading',
+    steps: [
+      { from: 'Alice', to: 'Dave', glyphs: ['limit'], delay: 100 },
+      { from: 'Alice', to: 'Dave', glyphs: ['shield'], delay: 150 },
+      { from: 'Dave', to: 'Alice', glyphs: ['thinking', 'clock'], delay: 1000 },
+      { from: 'Dave', to: 'Alice', glyphs: ['swap', 'checkmark'], delay: 500 },
+      { from: 'Dave', to: 'Alice', glyphs: ['celebrating', 'coin'], delay: 200 }
+    ]
+  },
+
+  // ═══════════════════════════════════════════════════════════
+  // AGENT WORKFLOW SCENARIOS
+  // ═══════════════════════════════════════════════════════════
+
+  // Task delegation and completion
+  {
+    name: 'task-delegation',
+    steps: [
+      { from: 'Alice', to: 'Bob', glyphs: ['delegate', 'arrow'], delay: 100 },
+      { from: 'Bob', to: 'Alice', glyphs: ['heartbeat'], delay: 500 },
+      { from: 'Bob', to: 'Alice', glyphs: ['heartbeat'], delay: 1000 },
+      { from: 'Bob', to: 'Alice', glyphs: ['task', 'checkmark'], delay: 800 },
+      { from: 'Alice', to: 'Bob', glyphs: ['celebrating'], delay: 200 }
+    ]
+  },
+
+  // Workflow with checkpoint
+  {
+    name: 'workflow-checkpoint',
+    steps: [
+      { from: 'Alice', to: 'Carol', glyphs: ['running', 'lightning'], delay: 100 },
+      { from: 'Carol', to: 'Alice', glyphs: ['checkpoint'], delay: 600 },
+      { from: 'Carol', to: 'Alice', glyphs: ['heartbeat'], delay: 500 },
+      { from: 'Carol', to: 'Alice', glyphs: ['checkpoint'], delay: 600 },
+      { from: 'Carol', to: 'Alice', glyphs: ['task', 'checkmark'], delay: 400 }
+    ]
+  },
+
+  // Multi-agent broadcast
+  {
+    name: 'agent-broadcast',
+    steps: [
+      { from: 'Alice', to: 'Bob', glyphs: ['broadcast'], delay: 50 },
+      { from: 'Alice', to: 'Carol', glyphs: ['broadcast'], delay: 50 },
+      { from: 'Alice', to: 'Dave', glyphs: ['broadcast'], delay: 50 },
+      { from: 'Alice', to: 'Eve', glyphs: ['broadcast'], delay: 50 },
+      { from: 'Bob', to: 'Alice', glyphs: ['heartbeat'], delay: 300 },
+      { from: 'Carol', to: 'Alice', glyphs: ['heartbeat'], delay: 400 },
+      { from: 'Dave', to: 'Alice', glyphs: ['heartbeat'], delay: 350 },
+      { from: 'Eve', to: 'Alice', glyphs: ['heartbeat'], delay: 500 }
+    ]
+  },
+
+  // Alert and recovery
+  {
+    name: 'alert-recovery',
+    steps: [
+      { from: 'Eve', to: 'Alice', glyphs: ['alert'], delay: 100 },
+      { from: 'Alice', to: 'Bob', glyphs: ['delegate'], delay: 200 },
+      { from: 'Bob', to: 'Alice', glyphs: ['heartbeat'], delay: 500 },
+      { from: 'Bob', to: 'Eve', glyphs: ['task', 'checkmark'], delay: 800 },
+      { from: 'Eve', to: 'Alice', glyphs: ['checkmark'], delay: 200 }
+    ]
+  },
+
+  // Logging and sync
+  {
+    name: 'log-sync',
+    steps: [
+      { from: 'Bob', to: 'Alice', glyphs: ['log'], delay: 300 },
+      { from: 'Carol', to: 'Alice', glyphs: ['log'], delay: 400 },
+      { from: 'Dave', to: 'Alice', glyphs: ['log'], delay: 350 },
+      { from: 'Alice', to: 'Eve', glyphs: ['sync'], delay: 200 },
+      { from: 'Eve', to: 'Alice', glyphs: ['checkmark'], delay: 500 }
+    ]
   }
 ];
 

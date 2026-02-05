@@ -25,6 +25,9 @@ const debug = msg => {
 
 let stream, ws;
 let currentMode = 'auto'; // 'real', 'mock', or 'auto'
+let knowledgePollTimer = null;
+
+const API_BASE = 'http://localhost:3000';
 
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + 'B';
@@ -57,17 +60,11 @@ function updatePanel(message, stats) {
   }
 }
 
-/**
- * Get mode from URL parameter
- */
 function getModeFromURL() {
   const params = new URLSearchParams(window.location.search);
   return params.get('mode') || 'auto';
 }
 
-/**
- * Try to connect with RealWebSocket, fall back to Mock if fails
- */
 function connectWithFallback() {
   return new Promise((resolve) => {
     debug('Connecting to server...');
@@ -92,7 +89,6 @@ function connectWithFallback() {
 
     realWs.connect();
 
-    // Timeout: if not connected in 3s, use mock
     setTimeout(() => {
       if (!realWs.isRunning) {
         console.log('[Main] Server connection timeout, using mock mode');
@@ -103,9 +99,6 @@ function connectWithFallback() {
   });
 }
 
-/**
- * Create MockWebSocket
- */
 function createMockWebSocket() {
   debug('DEMO - Mock data');
   currentMode = 'mock';
@@ -131,7 +124,6 @@ async function init() {
     return;
   }
 
-  // Determine mode
   const requestedMode = getModeFromURL();
   console.log(`[Main] Requested mode: ${requestedMode}`);
 
@@ -164,7 +156,6 @@ async function init() {
     console.error('[Main] WebSocket error:', e);
   }
 
-  // Controls
   document.getElementById('btn-pause')?.addEventListener('click', function() {
     const paused = !ws.togglePause();
     this.textContent = paused ? 'RESUME' : 'PAUSE';
@@ -175,11 +166,42 @@ async function init() {
     debug('Cleared');
   });
 
-  // Mode indicator (add to UI if element exists)
   const modeEl = document.getElementById('mode-indicator');
   if (modeEl) {
     modeEl.textContent = currentMode.toUpperCase();
     modeEl.className = `mode-${currentMode}`;
+  }
+
+  if (currentMode === 'real') {
+    startKnowledgePolling();
+  }
+}
+
+function startKnowledgePolling() {
+  updateKnowledgeStats();
+  knowledgePollTimer = setInterval(updateKnowledgeStats, 5000);
+}
+
+async function updateKnowledgeStats() {
+  try {
+    const resp = await fetch(`${API_BASE}/knowledge/stats`);
+    if (!resp.ok) return;
+    const stats = await resp.json();
+
+    const el = document.getElementById('knowledge-stats');
+    if (!el) return;
+
+    let text =
+      `STORED: ${stats.totalMessages} msgs | ` +
+      `AGENTS: ${stats.activeAgents} | ` +
+      `PATTERNS: ${stats.sequencesDetected} | ` +
+      `COMPOUNDS: ${stats.compoundGlyphs}`;
+    if (stats.pendingProposals > 0) {
+      text += ` | PENDING: ${stats.pendingProposals}`;
+    }
+    el.textContent = text;
+  } catch {
+    // Server unavailable
   }
 }
 

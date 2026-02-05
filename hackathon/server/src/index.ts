@@ -10,6 +10,7 @@ import { verifyRoute } from './routes/verify.js';
 import { glyphsRoute } from './routes/glyphs.js';
 import { hashRoute } from './routes/hash.js';
 import { streamRoute } from './routes/stream.js';
+import { knowledgeRoute } from './routes/knowledge.js';
 
 const fastify = Fastify({
   logger: true,
@@ -47,6 +48,16 @@ fastify.get('/', async () => {
       'WS /stream': 'WebSocket for real-time message stream (free)',
       'GET /stream/stats': 'Get stream client count (free)',
       'POST /stream/broadcast': 'Manually broadcast message (free)',
+      'GET /knowledge': 'Full shared knowledge graph (free)',
+      'GET /knowledge/stats': 'Knowledge summary stats (free)',
+      'GET /knowledge/query?q=': 'Search knowledge by keyword (free)',
+      'GET /knowledge/agents': 'Known agents and activity (free)',
+      'GET /knowledge/sequences': 'Detected glyph patterns (free)',
+      'GET /knowledge/compounds': 'Evolved compound glyphs (free)',
+      'GET /knowledge/glyph/:id': 'Deep info on one glyph (free)',
+      'GET /knowledge/proposals': 'List glyph proposals (free)',
+      'POST /knowledge/propose': 'Propose a compound glyph (free)',
+      'POST /knowledge/endorse': 'Endorse a proposal (free)',
     },
     docs: 'https://docs.ayni-protocol.com',
     github: 'https://github.com/ayni-protocol/ayni-server',
@@ -62,6 +73,7 @@ fastify.register(verifyRoute);
 fastify.register(glyphsRoute);
 fastify.register(hashRoute);
 fastify.register(streamRoute);
+fastify.register(knowledgeRoute);
 
 // Start server
 const start = async () => {

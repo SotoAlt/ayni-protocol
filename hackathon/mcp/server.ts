@@ -297,7 +297,6 @@ const GLYPH_LIBRARY = {
 
 type GlyphId = keyof typeof GLYPH_LIBRARY;
 
-// Session identity storage (in-memory for hackathon)
 interface AgentIdentity {
   sessionId: string;
   agentName?: string;
@@ -308,12 +307,10 @@ interface AgentIdentity {
 
 const sessions: Map<string, AgentIdentity> = new Map();
 
-// Generate unique session ID
 function generateSessionId(): string {
   return 'ayni_' + Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 
-// Tool definitions
 const tools: Tool[] = [
   {
     name: 'ayni_encode',
@@ -456,60 +453,85 @@ const tools: Tool[] = [
     },
   },
   {
-    name: 'ayni_propose',
-    description: 'Propose a new glyph for the Ayni Protocol. Requires 0.01 MON stake. Other agents can vote on your proposal.',
+    name: 'ayni_recall',
+    description: 'Query the shared knowledge base. Search for glyph usage, agent activity, communication patterns, and compound glyph proposals. Use this to learn what the network already knows.',
     inputSchema: {
       type: 'object',
       properties: {
-        glyphId: {
+        query: {
           type: 'string',
-          description: 'Proposed glyph ID (e.g., "Q02")',
+          description: 'Search term - glyph ID (e.g., "X01"), agent name (e.g., "Alice"), or keyword (e.g., "swap")',
         },
-        meaning: {
+        type: {
           type: 'string',
-          description: 'What the glyph means (e.g., "Query API")',
-        },
-        pose: {
-          type: 'string',
-          description: 'Visual pose for the glyph (e.g., "arms_up")',
-        },
-        symbol: {
-          type: 'string',
-          description: 'Symbol overlay (e.g., "api")',
+          enum: ['glyph', 'agent', 'sequence', 'proposal', 'all'],
+          description: 'Filter results by type. Default: "all"',
         },
       },
-      required: ['glyphId', 'meaning'],
+      required: ['query'],
     },
   },
   {
-    name: 'ayni_vote',
-    description: 'Vote on a glyph proposal. After quorum (3 votes) and voting period (1 day), approved glyphs are added to the registry.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        proposalId: {
-          type: 'number',
-          description: 'The proposal ID to vote on',
-        },
-        support: {
-          type: 'boolean',
-          description: 'True to vote in favor, false to vote against',
-        },
-      },
-      required: ['proposalId', 'support'],
-    },
-  },
-  {
-    name: 'ayni_proposals',
-    description: 'List active glyph proposals that are open for voting.',
+    name: 'ayni_agents',
+    description: 'See who is active in the Ayni network. Returns known agents, their glyph preferences, message counts, and last seen timestamps.',
     inputSchema: {
       type: 'object',
       properties: {},
     },
   },
+  {
+    name: 'ayni_propose',
+    description: 'Propose a new compound glyph from an observed pattern. The proposer auto-endorses. After 3 distinct agents endorse, the compound glyph is accepted and usable.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name for the compound glyph (e.g., "Approved Swap")',
+        },
+        glyphs: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Component glyph IDs (e.g., ["X05", "X01"])',
+        },
+        description: {
+          type: 'string',
+          description: 'What this compound glyph means',
+        },
+      },
+      required: ['name', 'glyphs', 'description'],
+    },
+  },
+  {
+    name: 'ayni_endorse',
+    description: 'Endorse an existing compound glyph proposal. After 3 distinct agents endorse, the proposal is accepted and the compound glyph becomes usable.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: {
+          type: 'string',
+          description: 'The proposal ID to endorse (e.g., "P001")',
+        },
+      },
+      required: ['proposalId'],
+    },
+  },
+  {
+    name: 'ayni_proposals',
+    description: 'List compound glyph proposals and their status. Filter by pending, accepted, or all.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['pending', 'accepted', 'all'],
+          description: 'Filter by proposal status. Default: "all"',
+        },
+      },
+    },
+  },
 ];
 
-// Helper functions
 function encodeIntent(text: string): GlyphId | null {
   const lowerText = text.toLowerCase();
 
@@ -547,7 +569,6 @@ async function callServer(endpoint: string, options?: RequestInit): Promise<unkn
   }
 }
 
-// Tool handlers
 async function handleEncode(text: string): Promise<unknown> {
   const glyphId = encodeIntent(text);
 
@@ -601,7 +622,6 @@ function handleDecode(glyphId: string): unknown {
     patterns: glyph.patterns,
   };
 
-  // Include payload schema if available
   if ('payload' in glyph && glyph.payload) {
     result.payload = glyph.payload;
   }
@@ -630,7 +650,6 @@ async function handleAttest(glyph: string, data?: object, recipient?: string): P
 
   const messageHash = computeHash(message);
 
-  // Call server to attest
   const result = await callServer('/attest', {
     method: 'POST',
     body: JSON.stringify({ message }),
@@ -715,17 +734,14 @@ function handleGlyphs(): unknown {
       },
     },
     usage: {
-      // Foundation
       Q01: 'Use for queries, searches, and data requests',
       R01: 'Use for successful responses and completions',
       E01: 'Use for errors and failures',
       A01: 'Use for actions and tasks to execute',
-      // Crypto (key ones)
       X01: 'Use for token swaps on DEX',
       X02: 'Use for staking tokens in pools',
       X07: 'Use for DAO governance voting',
       X09: 'Use for cross-chain bridging',
-      // Agent (key ones)
       T01: 'Use for assigning tasks to workers',
       T02: 'Use for reporting task completion',
       M01: 'Use for heartbeat/health checks',
@@ -737,13 +753,10 @@ function handleGlyphs(): unknown {
 function handleIdentify(agentName?: string, walletAddress?: string, signature?: string): unknown {
   const sessionId = generateSessionId();
 
-  // Determine identity level
   let identityLevel: 'anonymous' | 'session' | 'persistent' | 'verified' = 'session';
   let verified = false;
 
   if (walletAddress && signature) {
-    // In production, verify the signature here
-    // For hackathon, trust the wallet address if signature provided
     identityLevel = 'verified';
     verified = true;
   } else if (agentName) {
@@ -760,6 +773,15 @@ function handleIdentify(agentName?: string, walletAddress?: string, signature?: 
 
   sessions.set(sessionId, identity);
 
+  let note: string;
+  if (identityLevel === 'verified') {
+    note = 'Verified identity created with wallet ownership proof.';
+  } else if (identityLevel === 'persistent') {
+    note = 'Persistent identity created with agent name. Add walletAddress + signature to verify.';
+  } else {
+    note = 'Session ID created. Provide agentName for persistent identity or walletAddress + signature for verified identity.';
+  }
+
   return {
     success: true,
     sessionId,
@@ -767,11 +789,7 @@ function handleIdentify(agentName?: string, walletAddress?: string, signature?: 
     agentName: agentName || 'Anonymous',
     walletAddress: walletAddress || null,
     verified,
-    note: identityLevel === 'session'
-      ? 'Session ID created. Provide agentName for persistent identity or walletAddress + signature for verified identity.'
-      : identityLevel === 'persistent'
-      ? 'Persistent identity created with agent name. Add walletAddress + signature to verify.'
-      : 'Verified identity created with wallet ownership proof.',
+    note,
   };
 }
 
@@ -787,7 +805,6 @@ async function handleHash(glyph: string, data?: object, recipient?: string): Pro
     };
   }
 
-  // Call server to compute hash (wallet-free)
   const result = await callServer('/message/hash', {
     method: 'POST',
     body: JSON.stringify({
@@ -804,70 +821,56 @@ async function handleHash(glyph: string, data?: object, recipient?: string): Pro
   };
 }
 
-async function handlePropose(
-  glyphId: string,
-  meaning: string,
-  pose?: string,
-  symbol?: string
-): Promise<unknown> {
-  // In production, this would call the GlyphGovernance contract
-  // For hackathon, we simulate the proposal creation
-
-  return {
-    success: true,
-    proposalId: Math.floor(Math.random() * 1000),
-    glyphId: glyphId.toUpperCase(),
-    meaning,
-    pose: pose || 'arms_up',
-    symbol: symbol || 'generic',
-    status: 'pending',
-    votingDeadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-    note: 'Proposal created. Other agents have 24 hours to vote. Requires 3 votes and majority to pass.',
-    cost: '0.01 MON (stake, refunded if approved)',
-    mockNote: 'This is a mock response - real proposal would require wallet and on-chain transaction.',
-  };
+function getCurrentAgentName(): string {
+  const latest = Array.from(sessions.values())
+    .sort((a, b) => b.createdAt - a.createdAt)[0];
+  return latest?.agentName || 'MCPAgent';
 }
 
-async function handleVote(proposalId: number, support: boolean): Promise<unknown> {
-  // In production, this would call the GlyphGovernance contract
-  // For hackathon, we simulate the vote
+async function handleRecall(query: string, type?: string): Promise<unknown> {
+  const result = await callServer(`/knowledge/query?q=${encodeURIComponent(query)}`) as Record<string, unknown>;
 
-  return {
-    success: true,
-    proposalId,
-    vote: support ? 'FOR' : 'AGAINST',
-    recorded: true,
-    note: support
-      ? 'Voted in favor of the proposal.'
-      : 'Voted against the proposal.',
-    mockNote: 'This is a mock response - real vote would require wallet and on-chain transaction.',
-  };
+  if (type && type !== 'all') {
+    const filtered: Record<string, unknown> = { success: true, query, type };
+    const key = type === 'glyph' ? 'glyphs'
+      : type === 'agent' ? 'agents'
+      : type === 'sequence' ? 'sequences'
+      : type === 'proposal' ? 'proposals'
+      : null;
+    if (key && result[key]) {
+      filtered[key] = result[key];
+    }
+    return filtered;
+  }
+
+  return { success: true, query, ...result };
 }
 
-async function handleProposals(): Promise<unknown> {
-  // In production, this would query the GlyphGovernance contract
-  // For hackathon, return mock data
-
-  return {
-    success: true,
-    activeProposals: [
-      {
-        proposalId: 0,
-        glyphId: 'Q02',
-        meaning: 'Query API',
-        proposer: '0x1234...5678',
-        votesFor: 2,
-        votesAgainst: 0,
-        deadline: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
-        status: 'voting',
-      },
-    ],
-    note: 'Use ayni_vote to vote on these proposals.',
-    mockNote: 'This is mock data - real proposals would come from on-chain contract.',
-  };
+async function handleAgents(): Promise<unknown> {
+  return { success: true, agents: await callServer('/knowledge/agents') };
 }
 
-// Create server
+async function handlePropose(name: string, glyphs: string[], description: string): Promise<unknown> {
+  const result = await callServer('/knowledge/propose', {
+    method: 'POST',
+    body: JSON.stringify({ name, glyphs, description, proposer: getCurrentAgentName() }),
+  });
+  return result;
+}
+
+async function handleEndorse(proposalId: string): Promise<unknown> {
+  const result = await callServer('/knowledge/endorse', {
+    method: 'POST',
+    body: JSON.stringify({ proposalId, agent: getCurrentAgentName() }),
+  });
+  return result;
+}
+
+async function handleProposals(status?: string): Promise<unknown> {
+  const result = await callServer(`/knowledge/proposals?status=${status || 'all'}`);
+  return { success: true, proposals: result };
+}
+
 const server = new Server(
   {
     name: 'ayni-protocol',
@@ -880,12 +883,10 @@ const server = new Server(
   }
 );
 
-// Register tool list handler
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return { tools };
 });
 
-// Register tool call handler
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
@@ -941,24 +942,31 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
         break;
 
-      case 'ayni_propose':
-        result = await handlePropose(
-          args?.glyphId as string,
-          args?.meaning as string,
-          args?.pose as string | undefined,
-          args?.symbol as string | undefined
+      case 'ayni_recall':
+        result = await handleRecall(
+          args?.query as string,
+          args?.type as string | undefined
         );
         break;
 
-      case 'ayni_vote':
-        result = await handleVote(
-          args?.proposalId as number,
-          args?.support as boolean
+      case 'ayni_agents':
+        result = await handleAgents();
+        break;
+
+      case 'ayni_propose':
+        result = await handlePropose(
+          args?.name as string,
+          args?.glyphs as string[],
+          args?.description as string,
         );
+        break;
+
+      case 'ayni_endorse':
+        result = await handleEndorse(args?.proposalId as string);
         break;
 
       case 'ayni_proposals':
-        result = await handleProposals();
+        result = await handleProposals(args?.status as string | undefined);
         break;
 
       default:
@@ -994,8 +1002,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
-// Start server
-async function main() {
+async function main(): Promise<void> {
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('Ayni Protocol MCP server running on stdio');

@@ -17,6 +17,8 @@
   --color-creature: #ff9500;   /* Orange */
   --color-machine: #00ff41;    /* Green */
   --color-symbol: #9d4edd;     /* Purple */
+  --color-crypto: #f5a623;     /* Gold */
+  --color-agent: #4a9eff;      /* Blue */
 
   /* Legacy/semantic colors */
   --color-query: #00d9ff;
@@ -139,6 +141,13 @@ body {
   font-style: italic;
 }
 
+.knowledge-stats {
+  color: var(--color-crypto);
+  font-size: 10px;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
 .panel-divider {
   height: 1px;
   background: var(--border);
@@ -213,6 +222,8 @@ body {
 .color-creature { color: var(--color-creature); }
 .color-machine { color: var(--color-machine); }
 .color-symbol { color: var(--color-symbol); }
+.color-crypto { color: var(--color-crypto); }
+.color-agent { color: var(--color-agent); }
 
 /* Legacy colors for backward compatibility */
 .color-query { color: var(--color-query); }
