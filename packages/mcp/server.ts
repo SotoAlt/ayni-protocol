@@ -537,7 +537,9 @@ function encodeIntent(text: string): GlyphId | null {
 
   for (const [id, glyph] of Object.entries(GLYPH_LIBRARY)) {
     for (const pattern of glyph.patterns) {
-      if (lowerText.includes(pattern)) {
+      const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`\\b${escaped}\\b`);
+      if (re.test(lowerText)) {
         return id as GlyphId;
       }
     }
