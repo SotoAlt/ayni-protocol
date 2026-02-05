@@ -92,7 +92,7 @@ export const glyphsRoute: FastifyPluginAsync = async (fastify) => {
         address: contracts.ayniRegistry as `0x${string}`,
         abi: AyniRegistryABI,
         functionName: 'getAllGlyphs',
-      }) as Array<[string, string, string, string, string, boolean]>;
+      }) as unknown as Array<[string, string, string, string, string, boolean]>;
 
       const glyphs: Glyph[] = result.map(([id, meaning, pose, symbol, visualHash, active]) => ({
         id,
@@ -133,7 +133,7 @@ export const glyphsRoute: FastifyPluginAsync = async (fastify) => {
         address: contracts.ayniRegistry as `0x${string}`,
         abi: AyniRegistryABI,
         functionName: 'getActiveGlyphs',
-      }) as Array<[string, string, string, string, string, boolean]>;
+      }) as unknown as Array<[string, string, string, string, string, boolean]>;
 
       const glyphs: Glyph[] = result.map(([id, meaning, pose, symbol, visualHash, active]) => ({
         id,
@@ -196,7 +196,7 @@ export const glyphsRoute: FastifyPluginAsync = async (fastify) => {
         abi: AyniRegistryABI,
         functionName: 'getGlyph',
         args: [normalizedId],
-      }) as [string, string, string, string, string, boolean];
+      }) as unknown as [string, string, string, string, string, boolean];
 
       const [glyphId, meaning, pose, symbol, visualHash, active] = result;
 

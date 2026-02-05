@@ -60,7 +60,7 @@ export const verifyRoute: FastifyPluginAsync = async (fastify) => {
         abi: MessageAttestationABI,
         functionName: 'verify',
         args: [hash as `0x${string}`],
-      }) as [string, string, bigint, string, string];
+      }) as unknown as [string, string, bigint, string, string];
 
       const [messageHash, sender, timestamp, glyphId, recipient] = result;
 
@@ -146,7 +146,7 @@ export const verifyRoute: FastifyPluginAsync = async (fastify) => {
         abi: MessageAttestationABI,
         functionName: 'getAttestations',
         args: [address as `0x${string}`],
-      }) as Array<[string, string, bigint, string, string]>;
+      }) as unknown as Array<[string, string, bigint, string, string]>;
 
       const attestations: Attestation[] = result.map(([messageHash, sender, timestamp, glyphId, recipient]) => ({
         messageHash,
@@ -201,7 +201,7 @@ export const verifyRoute: FastifyPluginAsync = async (fastify) => {
         abi: MessageAttestationABI,
         functionName: 'getReceivedAttestations',
         args: [address as `0x${string}`],
-      }) as Array<[string, string, bigint, string, string]>;
+      }) as unknown as Array<[string, string, bigint, string, string]>;
 
       const attestations: Attestation[] = result.map(([messageHash, sender, timestamp, glyphId, recipient]) => ({
         messageHash,
