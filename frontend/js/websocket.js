@@ -13,7 +13,9 @@ import { GLYPH_COMBOS, GLYPH_MEANINGS, GLYPH_CATEGORIES } from './glyphs.js';
 // REAL WEBSOCKET - Connects to Ayni Server
 // ═══════════════════════════════════════════════════════════════
 
-const DEFAULT_SERVER_URL = 'ws://localhost:3000/stream';
+const DEFAULT_SERVER_URL = (typeof window !== 'undefined' && window.location.hostname !== 'localhost')
+  ? `ws://${window.location.host}/stream`
+  : 'ws://localhost:3000/stream';
 
 /**
  * RealWebSocket - connects to the Ayni Protocol server
