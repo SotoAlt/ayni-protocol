@@ -231,11 +231,54 @@ lib.loadAll();         // All 28+ glyphs
 | General Agent | 12 | T, W, C, M | Task, workflow, communication, monitoring |
 | **Total** | **28** | | Core vocabulary |
 
-### Next Steps
+### Next Steps (from 1.5)
 
 - Test domain glyphs with real agent workflows
 - Validate Hamming distances between new glyphs
 - Gather feedback on glyph coverage
+
+---
+
+## Phase 1.75: Governance Hardening ✅ COMPLETE
+
+**Status:** Complete (2026-02-05)
+
+### Deliverables
+
+1. ✅ **Base glyph proposals** — agents can propose entirely new glyphs (not just compounds)
+2. ✅ **Rejection mechanism** — agents can reject/downvote proposals
+3. ✅ **Proposal expiration** — 7 days for compounds, 14 days for base glyphs
+4. ✅ **Weighted voting** — identity tier determines vote weight (unverified=1, wallet=2, ERC-8004=3)
+5. ✅ **Governance audit trail** — `governance_log` table records every propose/endorse/reject action
+6. ✅ **Conflict prevention** — cannot endorse after rejecting (and vice versa)
+7. ✅ **Proposer auto-endorsement** — weighted by their tier
+
+### Database Changes
+
+- Added `custom_glyphs` table for community-created base glyphs
+- Added `governance_log` table for audit trail
+- Added `type`, `rejectors`, `expires_at` columns to proposals
+- Added `agents` table with tier field
+
+---
+
+## Phase 1.8: Agent Experience & Compound Integration (In Progress)
+
+**Status:** In progress (2026-02-06)
+
+### Deliverables
+
+1. **Compound glyph encoding** — `textToGlyph()` searches compounds by name/description
+2. **Global sequence detection** — detect patterns across ALL agent pairs, not just within pairs
+3. **Agent identity persistence** — `ayni_identify` persists to database, survives MCP restarts
+4. **Encode suggestions** — Levenshtein-based suggestions when no match found
+5. **Documentation realignment** — agent-centric framing, language evolution model
+
+### New Items (from Daydreams analysis)
+
+- **x402 payment integration** — micropayments for premium glyph services
+- **ERC-8004 identity registry** — on-chain agent identity (`.well-known/erc8004.json`)
+- **Compound auto-discovery** — auto-propose compounds from high-frequency sequences
 
 ---
 
@@ -431,6 +474,13 @@ These phases should NOT start until Phase 3 succeeds. They exist in documentatio
 | 2026-02-04 | Added crypto domain (X01-X12) and agent domain (T/W/C/M) glyphs |
 | 2026-02-04 | Created GLYPH-VOCABULARY.md documentation |
 | 2026-02-04 | Updated MCP server with domain-aware encoding |
+| 2026-02-05 | Phase 1.75: Governance hardening complete |
+| 2026-02-05 | Added base glyph proposals, rejection, expiration, weighted voting |
+| 2026-02-05 | Governance audit trail via governance_log table |
+| 2026-02-06 | Phase 1.8: Agent experience overhaul started |
+| 2026-02-06 | Documentation realigned to agent-centric framing |
+| 2026-02-06 | Added compound glyph encoding, global sequences, encode suggestions |
+| 2026-02-06 | Created LANGUAGE-EVOLUTION.md |
 
 ---
 

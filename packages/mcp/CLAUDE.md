@@ -7,6 +7,8 @@
 
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
+| #8546 | 11:47 PM | 🔵 | Agent Experience Analysis Reveals Critical Implementation Gaps | ~577 |
+| #8538 | 11:46 PM | 🔵 | MCP Server Implements Full Protocol with Knowledge Graph and Governance Tools | ~560 |
 | #8377 | 10:19 PM | 🔵 | Ayni Protocol MCP Server architecture and capabilities | ~575 |
 | #8344 | 10:14 PM | 🟣 | Added Knowledge Stats and Sequences Tools to Ayni MCP Server | ~570 |
 | #7901 | 6:00 PM | 🔴 | Implemented Word-Boundary Regex Matching in MCP Server encodeIntent | ~555 |

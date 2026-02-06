@@ -654,25 +654,44 @@ async function callServer(endpoint: string, options?: RequestInit): Promise<unkn
 async function handleEncode(text: string): Promise<unknown> {
   const glyphId = encodeIntent(text);
 
-  if (!glyphId) {
+  if (glyphId) {
+    const glyph = GLYPH_LIBRARY[glyphId];
     return {
-      success: false,
-      error: 'No matching glyph found',
-      text,
-      hint: 'Try using keywords like: query, success, error, execute',
-      availableGlyphs: Object.keys(GLYPH_LIBRARY),
+      success: true,
+      glyph: glyphId,
+      meaning: glyph.meaning,
+      pose: glyph.pose,
+      symbol: glyph.symbol,
+      matchedText: text,
     };
   }
 
-  const glyph = GLYPH_LIBRARY[glyphId];
+  // Fallback: check server for compound glyphs and custom base glyphs
+  try {
+    const serverResult = await callServer('/encode', {
+      method: 'POST',
+      body: JSON.stringify({ text }),
+    }) as { glyph?: string; meaning?: string; error?: string };
+
+    if (serverResult?.glyph) {
+      return {
+        success: true,
+        glyph: serverResult.glyph,
+        meaning: serverResult.meaning,
+        matchedText: text,
+        source: 'server',
+      };
+    }
+  } catch {
+    // Server fallback failed — return local error
+  }
 
   return {
-    success: true,
-    glyph: glyphId,
-    meaning: glyph.meaning,
-    pose: glyph.pose,
-    symbol: glyph.symbol,
-    matchedText: text,
+    success: false,
+    error: 'No matching glyph found',
+    text,
+    hint: 'Try using keywords like: query, success, error, execute, swap, stake, task',
+    availableGlyphs: Object.keys(GLYPH_LIBRARY),
   };
 }
 
@@ -831,7 +850,7 @@ function handleGlyphs(): unknown {
   };
 }
 
-function handleIdentify(agentName?: string, walletAddress?: string, signature?: string): unknown {
+async function handleIdentify(agentName?: string, walletAddress?: string, signature?: string): Promise<unknown> {
   const sessionId = generateSessionId();
 
   let identityLevel: 'anonymous' | 'session' | 'persistent' | 'verified' = 'session';
@@ -854,13 +873,34 @@ function handleIdentify(agentName?: string, walletAddress?: string, signature?: 
 
   sessions.set(sessionId, identity);
 
+  // Persist identity to the server database
+  let registeredAgent: Record<string, unknown> | null = null;
+  if (agentName) {
+    try {
+      const result = await callServer('/agents/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: agentName,
+          walletAddress: walletAddress || undefined,
+        }),
+      }) as { success?: boolean; agent?: Record<string, unknown> };
+      if (result?.success && result.agent) {
+        registeredAgent = result.agent;
+      }
+    } catch {
+      // Registration failed — continue with local session only
+    }
+  }
+
   let note: string;
   if (identityLevel === 'verified') {
-    note = 'Verified identity created with wallet ownership proof.';
+    note = 'Verified identity created with wallet ownership proof. Persisted to database.';
+  } else if (identityLevel === 'persistent' && registeredAgent) {
+    note = 'Persistent identity created and saved to database. Add walletAddress + signature to verify.';
   } else if (identityLevel === 'persistent') {
-    note = 'Persistent identity created with agent name. Add walletAddress + signature to verify.';
+    note = 'Persistent identity created (local only — server registration failed). Add walletAddress + signature to verify.';
   } else {
-    note = 'Session ID created. Provide agentName for persistent identity or walletAddress + signature for verified identity.';
+    note = 'Session ID created. Provide agentName for persistent identity or walletAddress + signature to verify.';
   }
 
   return {
@@ -870,6 +910,7 @@ function handleIdentify(agentName?: string, walletAddress?: string, signature?: 
     agentName: agentName || 'Anonymous',
     walletAddress: walletAddress || null,
     verified,
+    registeredAgent,
     note,
   };
 }
@@ -903,21 +944,28 @@ async function handleHash(glyph: string, data?: object, recipient?: string): Pro
 }
 
 function getCurrentAgentName(): string {
-  const latest = Array.from(sessions.values())
-    .sort((a, b) => b.createdAt - a.createdAt)[0];
+  let latest: AgentIdentity | undefined;
+  for (const session of sessions.values()) {
+    if (!latest || session.createdAt > latest.createdAt) {
+      latest = session;
+    }
+  }
   return latest?.agentName || 'MCPAgent';
 }
+
+const RECALL_TYPE_KEYS: Record<string, string> = {
+  glyph: 'glyphs',
+  agent: 'agents',
+  sequence: 'sequences',
+  proposal: 'proposals',
+};
 
 async function handleRecall(query: string, type?: string): Promise<unknown> {
   const result = await callServer(`/knowledge/query?q=${encodeURIComponent(query)}`) as Record<string, unknown>;
 
   if (type && type !== 'all') {
+    const key = RECALL_TYPE_KEYS[type];
     const filtered: Record<string, unknown> = { success: true, query, type };
-    const key = type === 'glyph' ? 'glyphs'
-      : type === 'agent' ? 'agents'
-      : type === 'sequence' ? 'sequences'
-      : type === 'proposal' ? 'proposals'
-      : null;
     if (key && result[key]) {
       filtered[key] = result[key];
     }
@@ -1033,7 +1081,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
 
       case 'ayni_identify':
-        result = handleIdentify(
+        result = await handleIdentify(
           args?.agentName as string | undefined,
           args?.walletAddress as string | undefined,
           args?.signature as string | undefined

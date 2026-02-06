@@ -1,6 +1,42 @@
 import { FastifyPluginAsync } from 'fastify';
-import { GLYPHS, textToGlyph, resolveGlyph } from '../glyphs.js';
+import { textToGlyph, resolveGlyph, getAllKeywords } from '../glyphs.js';
 import { proposalStore } from '../knowledge/patterns.js';
+
+function levenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i++) dp[i][0] = i;
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1]
+        ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+
+/** Find the N closest keywords to the input text using Levenshtein distance. */
+function findClosestKeywords(text: string, count: number): string[] {
+  const inputWords = text.toLowerCase().split(/\s+/);
+  const allKw = getAllKeywords();
+  const scored = new Map<string, number>();
+
+  for (const kw of allKw) {
+    const best = Math.min(...inputWords.map((w) => levenshtein(w, kw)));
+    const existing = scored.get(kw);
+    if (existing === undefined || best < existing) {
+      scored.set(kw, best);
+    }
+  }
+
+  return [...scored.entries()]
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, count)
+    .map(([kw]) => kw);
+}
 
 interface EncodeBody {
   text: string;
@@ -51,10 +87,13 @@ export const encodeRoute: FastifyPluginAsync = async (fastify) => {
     const glyphId = textToGlyph(text);
 
     if (!glyphId) {
+      const suggestions = findClosestKeywords(text, 3);
+
       return reply.status(400).send({
         error: 'No matching glyph found',
         text,
-        hint: `Try keywords like: ${Object.values(GLYPHS).flatMap(g => g.keywords.slice(0, 2)).slice(0, 10).join(', ')}`,
+        suggestions,
+        hint: `Did you mean: ${suggestions.join(', ')}?`,
       });
     }
 
@@ -72,11 +111,10 @@ export const encodeRoute: FastifyPluginAsync = async (fastify) => {
       pose: def.pose,
       symbol: def.symbol,
       domain: def.domain,
+      ...(data && { data }),
+      ...(recipient && { recipient }),
       timestamp: Date.now(),
     };
-
-    if (data) response.data = data;
-    if (recipient) response.recipient = recipient;
 
     response.messageHash = hashMessage(response);
 

@@ -9,6 +9,7 @@ import db from '../db.js';
 
 const MAX_CONTEXTS = 20;
 const SEQUENCE_WINDOW_MS = 30_000;
+const GLOBAL_SEQUENCE_WINDOW_MS = 300_000; // 5 minutes for cross-agent patterns
 
 export interface RecordedMessage {
   glyph: string;
@@ -133,8 +134,26 @@ function rowToGlyphKnowledge(row: any): GlyphKnowledge {
   };
 }
 
+function rowToSequenceKnowledge(row: any): SequenceKnowledge {
+  return {
+    count: row.count,
+    agents: JSON.parse(row.agents),
+    firstSeen: row.first_seen,
+    lastSeen: row.last_seen,
+  };
+}
+
+/** Check if two entries involve the same agent pair (in either direction). */
+function isSamePair(a: SequenceEntry, b: SequenceEntry): boolean {
+  return (
+    (a.sender === b.sender && a.recipient === b.recipient) ||
+    (a.sender === b.recipient && a.recipient === b.sender)
+  );
+}
+
 export class KnowledgeStore {
   private sequenceBuffer: SequenceEntry[] = [];
+  private globalBuffer: SequenceEntry[] = [];
 
   recordMessage(msg: RecordedMessage): void {
     const glyph = msg.glyph;
@@ -181,37 +200,48 @@ export class KnowledgeStore {
   }
 
   private detectSequences(glyph: string, sender: string, recipient: string, timestamp: number): void {
-    this.sequenceBuffer.push({ glyph, sender, recipient, timestamp });
+    const entry: SequenceEntry = { glyph, sender, recipient, timestamp };
 
+    this.detectPairSequences(entry, timestamp);
+    this.detectGlobalSequences(entry, timestamp);
+  }
+
+  /** Detect sequences between the same agent pair within a time window. */
+  private detectPairSequences(entry: SequenceEntry, timestamp: number): void {
+    this.sequenceBuffer.push(entry);
     const cutoff = timestamp - SEQUENCE_WINDOW_MS;
     this.sequenceBuffer = this.sequenceBuffer.filter((m) => m.timestamp >= cutoff);
 
     const recent = this.sequenceBuffer;
     for (let i = recent.length - 2; i >= 0; i--) {
       const prev = recent[i];
-      const samePair =
-        (prev.sender === sender && prev.recipient === recipient) ||
-        (prev.sender === recipient && prev.recipient === sender);
-      if (!samePair) continue;
-      if (prev.glyph === glyph) continue;
+      if (!isSamePair(prev, entry) || prev.glyph === entry.glyph) continue;
 
-      const seqKey = `${prev.glyph}->${glyph}`;
-      this.upsertSequence(seqKey, sender, recipient, timestamp);
+      this.upsertSequence(`${prev.glyph}->${entry.glyph}`, entry.sender, entry.recipient, timestamp);
 
       if (i > 0) {
         const prevPrev = recent[i - 1];
-        const samePairTriple =
-          (prevPrev.sender === sender && prevPrev.recipient === recipient) ||
-          (prevPrev.sender === recipient && prevPrev.recipient === sender) ||
-          (prevPrev.sender === prev.sender && prevPrev.recipient === prev.recipient) ||
-          (prevPrev.sender === prev.recipient && prevPrev.recipient === prev.sender);
-
-        if (samePairTriple && prevPrev.glyph !== prev.glyph) {
-          const tripleKey = `${prevPrev.glyph}->${prev.glyph}->${glyph}`;
-          this.upsertSequence(tripleKey, sender, recipient, timestamp);
+        if ((isSamePair(prevPrev, entry) || isSamePair(prevPrev, prev)) && prevPrev.glyph !== prev.glyph) {
+          this.upsertSequence(`${prevPrev.glyph}->${prev.glyph}->${entry.glyph}`, entry.sender, entry.recipient, timestamp);
         }
       }
 
+      break;
+    }
+  }
+
+  /** Detect sequences across different agent pairs within a wider time window. */
+  private detectGlobalSequences(entry: SequenceEntry, timestamp: number): void {
+    this.globalBuffer.push(entry);
+    const cutoff = timestamp - GLOBAL_SEQUENCE_WINDOW_MS;
+    this.globalBuffer = this.globalBuffer.filter((m) => m.timestamp >= cutoff);
+
+    for (let i = this.globalBuffer.length - 2; i >= 0; i--) {
+      const prev = this.globalBuffer[i];
+      if (prev.glyph === entry.glyph) continue;
+      if (isSamePair(prev, entry)) continue;
+
+      this.upsertSequence(`global:${prev.glyph}->${entry.glyph}`, entry.sender, entry.recipient, timestamp);
       break;
     }
   }
@@ -237,12 +267,7 @@ export class KnowledgeStore {
 
     const sequences: Record<string, SequenceKnowledge> = {};
     for (const row of stmts.allSequences.all() as any[]) {
-      sequences[row.key] = {
-        count: row.count,
-        agents: JSON.parse(row.agents),
-        firstSeen: row.first_seen,
-        lastSeen: row.last_seen,
-      };
+      sequences[row.key] = rowToSequenceKnowledge(row);
     }
 
     return { glyphs, agents, sequences };
@@ -356,6 +381,7 @@ export class KnowledgeStore {
     stmts.clearAgents.run();
     stmts.clearSequences.run();
     this.sequenceBuffer = [];
+    this.globalBuffer = [];
   }
 }
 

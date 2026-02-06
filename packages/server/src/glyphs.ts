@@ -7,10 +7,12 @@
 
 import db from './db.js';
 
-// Prepared statements for custom glyph lookups
+// Prepared statements for custom glyph and compound lookups
 const stmts = {
   getCustomGlyph: db.prepare('SELECT * FROM custom_glyphs WHERE id = ?'),
   allCustomGlyphKeywords: db.prepare('SELECT id, keywords FROM custom_glyphs'),
+  getCompound: db.prepare('SELECT * FROM compounds WHERE id = ?'),
+  allCompounds: db.prepare('SELECT id, name, description, components FROM compounds'),
 };
 
 export interface GlyphDefinition {
@@ -447,6 +449,7 @@ export function resolveGlyph(id: string): GlyphDefinition | null {
   const upper = id.toUpperCase();
   if (GLYPHS[upper]) return GLYPHS[upper];
 
+  // Check custom base glyphs from DB
   const row = stmts.getCustomGlyph.get(upper) as any;
   if (row) {
     return {
@@ -460,9 +463,27 @@ export function resolveGlyph(id: string): GlyphDefinition | null {
       visual: { glyphs: [row.pose, row.symbol], category: 'community' },
     };
   }
+
+  // Check accepted compound glyphs
+  const compound = stmts.getCompound.get(upper) as any;
+  if (compound) {
+    const components: string[] = JSON.parse(compound.components);
+    return {
+      meaning: compound.name,
+      pose: 'compound',
+      symbol: 'compound',
+      description: compound.description,
+      usage: `Compound glyph: ${components.join(' → ')}`,
+      domain: 'foundation',
+      keywords: compound.name.toLowerCase().split(/\s+/),
+      visual: { glyphs: components.map((c: string) => c.toLowerCase()), category: 'compound' },
+    };
+  }
+
   return null;
 }
 
+/** Word-boundary match to prevent partial matches (e.g., "ok" inside "tokens"). */
 function matchesKeyword(text: string, keyword: string): boolean {
   const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`\\b${escaped}\\b`).test(text);
@@ -476,12 +497,14 @@ function matchesKeyword(text: string, keyword: string): boolean {
 export function textToGlyph(text: string): string | null {
   const lower = text.toLowerCase();
 
+  // 1. Check hardcoded glyphs
   for (const [id, def] of Object.entries(GLYPHS)) {
     if (def.keywords.some((kw) => matchesKeyword(lower, kw))) {
       return id;
     }
   }
 
+  // 2. Check custom base glyphs from DB
   const customRows = stmts.allCustomGlyphKeywords.all() as { id: string; keywords: string }[];
   for (const row of customRows) {
     const keywords: string[] = JSON.parse(row.keywords);
@@ -490,7 +513,33 @@ export function textToGlyph(text: string): string | null {
     }
   }
 
+  // 3. Check accepted compound glyphs by name and description
+  const compounds = stmts.allCompounds.all() as { id: string; name: string; description: string; components: string }[];
+  for (const compound of compounds) {
+    const nameWords = compound.name.toLowerCase().split(/\s+/);
+    if (nameWords.some((word) => word.length > 2 && matchesKeyword(lower, word))) {
+      return compound.id;
+    }
+    const descWords = compound.description.toLowerCase().split(/\s+/);
+    if (descWords.some((word) => word.length > 3 && matchesKeyword(lower, word))) {
+      return compound.id;
+    }
+  }
+
   return null;
+}
+
+/** Get all glyph keywords for suggestion purposes */
+export function getAllKeywords(): string[] {
+  const hardcoded = Object.values(GLYPHS).flatMap((def) => def.keywords);
+
+  const customRows = stmts.allCustomGlyphKeywords.all() as { id: string; keywords: string }[];
+  const custom = customRows.flatMap((row) => JSON.parse(row.keywords) as string[]);
+
+  const compounds = stmts.allCompounds.all() as { id: string; name: string }[];
+  const compound = compounds.flatMap((c) => c.name.toLowerCase().split(/\s+/));
+
+  return [...hardcoded, ...custom, ...compound];
 }
 
 /** Get the frontend visual mapping for a glyph */
