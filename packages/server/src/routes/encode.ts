@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from 'fastify';
-import { GLYPHS, textToGlyph } from '../glyphs.js';
+import { GLYPHS, textToGlyph, resolveGlyph } from '../glyphs.js';
+import { proposalStore } from '../knowledge/patterns.js';
 
 interface EncodeBody {
   text: string;
@@ -57,7 +58,13 @@ export const encodeRoute: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    const def = GLYPHS[glyphId];
+    const def = resolveGlyph(glyphId);
+    if (!def) {
+      return reply.status(400).send({
+        error: 'Glyph definition not found',
+        glyph: glyphId,
+      });
+    }
 
     const response: EncodeResponse = {
       glyph: glyphId,
@@ -72,6 +79,10 @@ export const encodeRoute: FastifyPluginAsync = async (fastify) => {
     if (recipient) response.recipient = recipient;
 
     response.messageHash = hashMessage(response);
+
+    // Track usage for community-created glyphs (no-op if glyphId is a hardcoded glyph)
+    proposalStore.useCompound(glyphId);
+    proposalStore.useCustomGlyph(glyphId);
 
     return response;
   });

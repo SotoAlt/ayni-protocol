@@ -481,7 +481,7 @@ const tools: Tool[] = [
   },
   {
     name: 'ayni_propose',
-    description: 'Propose a new compound glyph from an observed pattern. The proposer auto-endorses. After 3 distinct agents endorse, the compound glyph is accepted and usable.',
+    description: 'Propose a new compound glyph from an observed pattern. The proposer auto-endorses. All component glyph IDs are validated. After weighted endorsements reach threshold (3), the compound glyph is accepted. Proposals expire after 7 days.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -492,7 +492,7 @@ const tools: Tool[] = [
         glyphs: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Component glyph IDs (e.g., ["X05", "X01"])',
+          description: 'Component glyph IDs (e.g., ["X05", "X01"]) — all must be valid existing glyphs',
         },
         description: {
           type: 'string',
@@ -503,14 +503,60 @@ const tools: Tool[] = [
     },
   },
   {
+    name: 'ayni_propose_base_glyph',
+    description: 'Propose an entirely new base glyph for the protocol. Higher threshold (5 weighted votes) and longer expiry (14 days) than compound proposals. Accepted proposals create a new glyph usable in encode/send.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          description: 'Name for the new glyph (e.g., "Summarize")',
+        },
+        domain: {
+          type: 'string',
+          enum: ['foundation', 'crypto', 'agent', 'state', 'error', 'payment', 'community'],
+          description: 'Domain category for the glyph',
+        },
+        keywords: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Keywords that trigger this glyph in text-to-glyph encoding',
+        },
+        meaning: {
+          type: 'string',
+          description: 'Short meaning (e.g., "Summarize Content")',
+        },
+        description: {
+          type: 'string',
+          description: 'Detailed description of what this glyph represents',
+        },
+      },
+      required: ['name', 'domain', 'keywords', 'meaning', 'description'],
+    },
+  },
+  {
     name: 'ayni_endorse',
-    description: 'Endorse an existing compound glyph proposal. After 3 distinct agents endorse, the proposal is accepted and the compound glyph becomes usable.',
+    description: 'Endorse an existing glyph proposal (compound or base). Your vote weight depends on your identity tier: unverified=1, wallet-linked=2, erc-8004=3. Cannot endorse if you already rejected.',
     inputSchema: {
       type: 'object',
       properties: {
         proposalId: {
           type: 'string',
           description: 'The proposal ID to endorse (e.g., "P001")',
+        },
+      },
+      required: ['proposalId'],
+    },
+  },
+  {
+    name: 'ayni_reject',
+    description: 'Reject/downvote a glyph proposal. Your vote weight depends on your identity tier. After weighted rejections reach threshold (3), the proposal is rejected. Cannot reject if you already endorsed.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: {
+          type: 'string',
+          description: 'The proposal ID to reject (e.g., "P001")',
         },
       },
       required: ['proposalId'],
@@ -735,9 +781,7 @@ async function handleVerify(hash: string): Promise<unknown> {
     };
   }
 
-  const result = await callServer(`/verify/${hash}`);
-
-  return result;
+  return callServer(`/verify/${hash}`);
 }
 
 function handleGlyphs(): unknown {
@@ -888,24 +932,41 @@ async function handleAgents(): Promise<unknown> {
 }
 
 async function handlePropose(name: string, glyphs: string[], description: string): Promise<unknown> {
-  const result = await callServer('/knowledge/propose', {
+  return callServer('/knowledge/propose', {
     method: 'POST',
     body: JSON.stringify({ name, glyphs, description, proposer: getCurrentAgentName() }),
   });
-  return result;
+}
+
+async function handleProposeBaseGlyph(
+  name: string,
+  domain: string,
+  keywords: string[],
+  meaning: string,
+  description: string
+): Promise<unknown> {
+  return callServer('/knowledge/propose/base-glyph', {
+    method: 'POST',
+    body: JSON.stringify({ name, domain, keywords, meaning, description, proposer: getCurrentAgentName() }),
+  });
 }
 
 async function handleEndorse(proposalId: string): Promise<unknown> {
-  const result = await callServer('/knowledge/endorse', {
+  return callServer('/knowledge/endorse', {
     method: 'POST',
     body: JSON.stringify({ proposalId, agent: getCurrentAgentName() }),
   });
-  return result;
+}
+
+async function handleReject(proposalId: string): Promise<unknown> {
+  return callServer('/knowledge/reject', {
+    method: 'POST',
+    body: JSON.stringify({ proposalId, agent: getCurrentAgentName() }),
+  });
 }
 
 async function handleProposals(status?: string): Promise<unknown> {
-  const result = await callServer(`/knowledge/proposals?status=${status || 'all'}`);
-  return { success: true, proposals: result };
+  return { success: true, proposals: await callServer(`/knowledge/proposals?status=${status || 'all'}`) };
 }
 
 async function handleKnowledgeStats(): Promise<unknown> {
@@ -1006,8 +1067,22 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         );
         break;
 
+      case 'ayni_propose_base_glyph':
+        result = await handleProposeBaseGlyph(
+          args?.name as string,
+          args?.domain as string,
+          args?.keywords as string[],
+          args?.meaning as string,
+          args?.description as string,
+        );
+        break;
+
       case 'ayni_endorse':
         result = await handleEndorse(args?.proposalId as string);
+        break;
+
+      case 'ayni_reject':
+        result = await handleReject(args?.proposalId as string);
         break;
 
       case 'ayni_proposals':

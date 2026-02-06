@@ -5,6 +5,14 @@
  * and knowledge routes.
  */
 
+import db from './db.js';
+
+// Prepared statements for custom glyph lookups
+const stmts = {
+  getCustomGlyph: db.prepare('SELECT * FROM custom_glyphs WHERE id = ?'),
+  allCustomGlyphKeywords: db.prepare('SELECT id, keywords FROM custom_glyphs'),
+};
+
 export interface GlyphDefinition {
   meaning: string;
   pose: string;
@@ -432,18 +440,53 @@ export const GLYPHS: Record<string, GlyphDefinition> = {
 };
 
 /**
+ * Resolve a glyph ID including custom base glyphs from the DB.
+ * Returns the definition or null if not found.
+ */
+export function resolveGlyph(id: string): GlyphDefinition | null {
+  const upper = id.toUpperCase();
+  if (GLYPHS[upper]) return GLYPHS[upper];
+
+  const row = stmts.getCustomGlyph.get(upper) as any;
+  if (row) {
+    return {
+      meaning: row.meaning,
+      pose: row.pose,
+      symbol: row.symbol,
+      description: row.meaning,
+      usage: `Community-created glyph: ${row.meaning}`,
+      domain: row.domain as GlyphDefinition['domain'],
+      keywords: JSON.parse(row.keywords),
+      visual: { glyphs: [row.pose, row.symbol], category: 'community' },
+    };
+  }
+  return null;
+}
+
+function matchesKeyword(text: string, keyword: string): boolean {
+  const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
+/**
  * Match text to a glyph ID using keyword matching.
+ * Checks hardcoded glyphs first, then custom base glyphs from DB.
  * Returns the best match or null.
  */
 export function textToGlyph(text: string): string | null {
   const lower = text.toLowerCase();
 
   for (const [id, def] of Object.entries(GLYPHS)) {
-    for (const keyword of def.keywords) {
-      const pattern = new RegExp(`\\b${keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
-      if (pattern.test(lower)) {
-        return id;
-      }
+    if (def.keywords.some((kw) => matchesKeyword(lower, kw))) {
+      return id;
+    }
+  }
+
+  const customRows = stmts.allCustomGlyphKeywords.all() as { id: string; keywords: string }[];
+  for (const row of customRows) {
+    const keywords: string[] = JSON.parse(row.keywords);
+    if (keywords.some((kw) => matchesKeyword(lower, kw))) {
+      return row.id;
     }
   }
 

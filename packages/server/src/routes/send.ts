@@ -4,6 +4,7 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { monadTestnet, contracts, pricing } from '../config.js';
 import { MessageAttestationABI } from '../contracts.js';
 import { broadcastMessage } from './stream.js';
+import { proposalStore } from '../knowledge/patterns.js';
 
 interface SendBody {
   glyph: string;
@@ -196,6 +197,10 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
     if (!response.success) {
       return reply.status(500).send(response);
     }
+
+    // Track usage for community-created glyphs (no-op if glyphId is a hardcoded glyph)
+    proposalStore.useCompound(normalizedGlyph);
+    proposalStore.useCustomGlyph(normalizedGlyph);
 
     // Broadcast to WebSocket clients
     broadcastMessage({

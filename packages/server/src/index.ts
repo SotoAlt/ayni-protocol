@@ -93,7 +93,10 @@ fastify.get('/', async () => {
       'GET /knowledge/glyph/:id': 'Deep info on one glyph (free)',
       'GET /knowledge/proposals': 'List glyph proposals (free)',
       'POST /knowledge/propose': 'Propose a compound glyph (free)',
+      'POST /knowledge/propose/base-glyph': 'Propose a new base glyph (free)',
       'POST /knowledge/endorse': 'Endorse a proposal (free)',
+      'POST /knowledge/reject': 'Reject a proposal (free)',
+      'GET /knowledge/proposals/:id/actions': 'Audit trail for a proposal (free)',
       'POST /agents/register': 'Register agent identity (free)',
       'GET /agents': 'List registered agents (free)',
       'GET /agents/:address': 'Get agent by address (free)',
@@ -114,6 +117,20 @@ fastify.register(hashRoute);
 fastify.register(streamRoute);
 fastify.register(knowledgeRoute);
 fastify.register(agentsRoute);
+
+// Expire stale proposals every 60 seconds
+fastify.addHook('onReady', async () => {
+  setInterval(() => {
+    try {
+      const expired = proposalStore.expireStale();
+      if (expired > 0) {
+        fastify.log.info(`[Governance] Expired ${expired} stale proposal(s)`);
+      }
+    } catch (err) {
+      fastify.log.error({ err }, 'Failed to expire stale proposals');
+    }
+  }, 60_000);
+});
 
 // Start server
 try {

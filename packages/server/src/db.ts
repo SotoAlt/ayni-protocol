@@ -95,13 +95,41 @@ db.exec(`
     last_seen INTEGER NOT NULL
   );
 
+  CREATE TABLE IF NOT EXISTS custom_glyphs (
+    id TEXT PRIMARY KEY,
+    meaning TEXT NOT NULL,
+    keywords TEXT NOT NULL,
+    pose TEXT NOT NULL DEFAULT 'action',
+    symbol TEXT NOT NULL DEFAULT 'diamond',
+    domain TEXT NOT NULL,
+    proposal_id TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    use_count INTEGER NOT NULL DEFAULT 0
+  );
+
+  CREATE TABLE IF NOT EXISTS governance_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    proposal_id TEXT NOT NULL,
+    action TEXT NOT NULL,
+    agent TEXT NOT NULL,
+    agent_tier TEXT DEFAULT 'unverified',
+    weight INTEGER DEFAULT 1,
+    timestamp INTEGER NOT NULL
+  );
+
   CREATE INDEX IF NOT EXISTS idx_messages_glyph ON messages(glyph);
   CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender);
   CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
   CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
   CREATE INDEX IF NOT EXISTS idx_agents_tier ON agents(tier);
   CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);
+  CREATE INDEX IF NOT EXISTS idx_gov_log_proposal ON governance_log(proposal_id);
 `);
+
+// Safe migrations for existing proposals table (add new columns)
+try { db.exec('ALTER TABLE proposals ADD COLUMN type TEXT NOT NULL DEFAULT \'compound\''); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN rejectors TEXT NOT NULL DEFAULT \'[]\''); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN expires_at INTEGER'); } catch { /* column exists */ }
 
 // Import existing JSON data on first run
 function importJsonIfNeeded(): void {
