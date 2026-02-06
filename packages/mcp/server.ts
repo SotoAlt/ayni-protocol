@@ -530,6 +530,22 @@ const tools: Tool[] = [
       },
     },
   },
+  {
+    name: 'ayni_knowledge_stats',
+    description: 'Get summary statistics of the Ayni knowledge graph: total glyphs used, agents active, messages sent, sequences detected, and compound proposals.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
+  {
+    name: 'ayni_sequences',
+    description: 'Get detected glyph sequences — recurring patterns of glyph usage across agents. Useful for discovering common workflows.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 function encodeIntent(text: string): GlyphId | null {
@@ -892,6 +908,14 @@ async function handleProposals(status?: string): Promise<unknown> {
   return { success: true, proposals: result };
 }
 
+async function handleKnowledgeStats(): Promise<unknown> {
+  return { success: true, stats: await callServer('/knowledge/stats') };
+}
+
+async function handleSequences(): Promise<unknown> {
+  return { success: true, sequences: await callServer('/knowledge/sequences') };
+}
+
 const server = new Server(
   {
     name: 'ayni-protocol',
@@ -988,6 +1012,14 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'ayni_proposals':
         result = await handleProposals(args?.status as string | undefined);
+        break;
+
+      case 'ayni_knowledge_stats':
+        result = await handleKnowledgeStats();
+        break;
+
+      case 'ayni_sequences':
+        result = await handleSequences();
         break;
 
       default:
