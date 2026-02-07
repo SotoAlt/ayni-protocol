@@ -1,5 +1,5 @@
 import { FastifyPluginAsync } from 'fastify';
-import { createPublicClient, createWalletClient, http, keccak256, toBytes } from 'viem';
+import { createPublicClient, createWalletClient, http, keccak256, toBytes, verifyMessage } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { monadTestnet, contracts, pricing } from '../config.js';
 import { MessageAttestationABI } from '../contracts.js';
@@ -12,16 +12,8 @@ interface AttestBody {
     timestamp?: number;
   };
   sender?: string;
-}
-
-interface AttestResponse {
-  success: boolean;
-  transactionHash?: string;
-  messageHash: string;
-  glyphId: string;
-  timestamp: number;
-  blockNumber?: number;
-  error?: string;
+  agentSignature?: string;
+  agentAddress?: string;
 }
 
 // Create viem clients
@@ -68,6 +60,8 @@ export const attestRoute: FastifyPluginAsync = async (fastify) => {
             },
           },
           sender: { type: 'string' },
+          agentSignature: { type: 'string' },
+          agentAddress: { type: 'string', pattern: '^0x[a-fA-F0-9]{40}$' },
         },
       },
       response: {
@@ -86,7 +80,7 @@ export const attestRoute: FastifyPluginAsync = async (fastify) => {
       },
     },
   }, async (request, reply) => {
-    const { message, sender } = request.body;
+    const { message, sender, agentSignature, agentAddress } = request.body;
 
     // Validate glyph ID
     const validGlyphs = ['Q01', 'R01', 'E01', 'A01'];
@@ -106,6 +100,21 @@ export const attestRoute: FastifyPluginAsync = async (fastify) => {
     const messageHash = computeMessageHash(message);
     const timestamp = message.timestamp || Date.now();
 
+    // Verify agent self-attestation signature if provided
+    let selfAttested = false;
+    if (agentSignature && agentAddress) {
+      try {
+        const valid = await verifyMessage({
+          address: agentAddress as `0x${string}`,
+          message: messageHash,
+          signature: agentSignature as `0x${string}`,
+        });
+        selfAttested = valid;
+      } catch {
+        // Invalid signature — fall back to server attestation
+      }
+    }
+
     // Check if contracts are deployed
     if (contracts.messageAttestation === '0x0000000000000000000000000000000000000000') {
       // Mock response for development
@@ -116,6 +125,8 @@ export const attestRoute: FastifyPluginAsync = async (fastify) => {
         glyphId: normalizedGlyph,
         timestamp,
         blockNumber: 0,
+        selfAttested,
+        attester: selfAttested ? agentAddress : serverAccount.address,
         note: 'Mock attestation - contracts not yet deployed',
         pricing: pricing.attest + ' MON',
       };

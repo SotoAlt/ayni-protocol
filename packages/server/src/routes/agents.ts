@@ -1,10 +1,12 @@
 import { FastifyPluginAsync } from 'fastify';
+import { verifyMessage } from 'viem';
 import db from '../db.js';
 
 interface RegisterBody {
   name: string;
   address?: string;
   walletAddress?: string;
+  signature?: string;
   serviceUrl?: string;
   protocols?: string[];
 }
@@ -29,7 +31,18 @@ function generateAgentId(): string {
   return id;
 }
 
-function formatAgent(row: AgentRow) {
+interface FormattedAgent {
+  address: string;
+  name: string;
+  serviceUrl: string | null;
+  protocols: string[];
+  tier: string;
+  walletAddress: string | null;
+  registeredAt: number;
+  lastSeen: number;
+}
+
+function formatAgent(row: AgentRow): FormattedAgent {
   return {
     address: row.address,
     name: row.name,
@@ -54,17 +67,37 @@ export const agentsRoute: FastifyPluginAsync = async (fastify) => {
           name: { type: 'string', minLength: 1, maxLength: 64 },
           address: { type: 'string' },
           walletAddress: { type: 'string', pattern: '^0x[a-fA-F0-9]{40}$' },
+          signature: { type: 'string', pattern: '^0x[a-fA-F0-9]+$' },
           serviceUrl: { type: 'string' },
           protocols: { type: 'array', items: { type: 'string' } },
         },
       },
     },
   }, async (request) => {
-    const { name, address, walletAddress, serviceUrl, protocols } = request.body;
+    const { name, address, walletAddress, signature, serviceUrl, protocols } = request.body;
     const now = Date.now();
 
     const agentAddress = address || generateAgentId();
-    const tier = walletAddress ? 'wallet-linked' : 'unverified';
+    let tier: 'unverified' | 'wallet-linked' = 'unverified';
+
+    // Verify wallet ownership if both walletAddress and signature provided
+    if (walletAddress && signature) {
+      try {
+        const challengeMessage = `Ayni Protocol identity: ${name}`;
+        const valid = await verifyMessage({
+          address: walletAddress as `0x${string}`,
+          message: challengeMessage,
+          signature: signature as `0x${string}`,
+        });
+        if (valid) {
+          tier = 'wallet-linked';
+        }
+      } catch {
+        // Signature verification failed — stay unverified
+      }
+    }
+
+    const verified = tier === 'wallet-linked';
 
     const stmt = db.prepare(`
       INSERT INTO agents (address, name, service_url, protocols, tier, wallet_address, registered_at, last_seen)
@@ -84,7 +117,7 @@ export const agentsRoute: FastifyPluginAsync = async (fastify) => {
       serviceUrl || null,
       JSON.stringify(protocols || []),
       tier,
-      walletAddress || null,
+      verified ? walletAddress : null,
       now,
       now,
     );
@@ -95,7 +128,8 @@ export const agentsRoute: FastifyPluginAsync = async (fastify) => {
         address: agentAddress,
         name,
         tier,
-        walletAddress: walletAddress || null,
+        walletAddress: verified ? walletAddress : null,
+        walletVerified: verified,
         registeredAt: now,
       },
     };

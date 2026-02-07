@@ -345,7 +345,7 @@ const tools: Tool[] = [
   },
   {
     name: 'ayni_attest',
-    description: 'Attest a message on the Monad blockchain. Creates verifiable on-chain proof that this message existed at this timestamp. Costs 0.01 MON.',
+    description: 'Attest a message on the Monad blockchain. Creates verifiable on-chain proof that this message existed at this timestamp. Wallet-linked agents can self-attest by providing their own signature. Costs 0.01 MON.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -360,6 +360,14 @@ const tools: Tool[] = [
         recipient: {
           type: 'string',
           description: 'Optional recipient address (0x...)',
+        },
+        agentSignature: {
+          type: 'string',
+          description: 'Optional: your wallet signature of the message hash for self-attestation (wallet-linked agents only)',
+        },
+        agentAddress: {
+          type: 'string',
+          description: 'Optional: your wallet address (required if providing agentSignature)',
         },
       },
       required: ['glyph'],
@@ -730,7 +738,7 @@ function handleDecode(glyphId: string): unknown {
   return result;
 }
 
-async function handleAttest(glyph: string, data?: object, recipient?: string): Promise<unknown> {
+async function handleAttest(glyph: string, data?: object, recipient?: string, agentSignature?: string, agentAddress?: string): Promise<unknown> {
   const normalizedGlyph = glyph.toUpperCase().trim();
 
   if (!(normalizedGlyph in GLYPH_LIBRARY)) {
@@ -751,9 +759,15 @@ async function handleAttest(glyph: string, data?: object, recipient?: string): P
 
   const messageHash = computeHash(message);
 
+  const payload: Record<string, unknown> = { message };
+  if (agentSignature && agentAddress) {
+    payload.agentSignature = agentSignature;
+    payload.agentAddress = agentAddress;
+  }
+
   const result = await callServer('/attest', {
     method: 'POST',
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(payload),
   });
 
   return {
@@ -853,54 +867,71 @@ function handleGlyphs(): unknown {
 async function handleIdentify(agentName?: string, walletAddress?: string, signature?: string): Promise<unknown> {
   const sessionId = generateSessionId();
 
-  let identityLevel: 'anonymous' | 'session' | 'persistent' | 'verified' = 'session';
-  let verified = false;
-
-  if (walletAddress && signature) {
-    identityLevel = 'verified';
-    verified = true;
-  } else if (agentName) {
-    identityLevel = 'persistent';
-  }
-
   const identity: AgentIdentity = {
     sessionId,
     agentName,
     walletAddress,
-    verified,
+    verified: false,
     createdAt: Date.now(),
   };
 
   sessions.set(sessionId, identity);
 
-  // Persist identity to the server database
+  // Persist identity to the server database (server handles signature verification)
   let registeredAgent: Record<string, unknown> | null = null;
   if (agentName) {
     try {
+      const registerPayload: Record<string, unknown> = { name: agentName };
+      if (walletAddress) registerPayload.walletAddress = walletAddress;
+      if (signature) registerPayload.signature = signature;
+
       const result = await callServer('/agents/register', {
         method: 'POST',
-        body: JSON.stringify({
-          name: agentName,
-          walletAddress: walletAddress || undefined,
-        }),
+        body: JSON.stringify(registerPayload),
       }) as { success?: boolean; agent?: Record<string, unknown> };
+
       if (result?.success && result.agent) {
         registeredAgent = result.agent;
+        if (result.agent.walletVerified) {
+          identity.verified = true;
+        }
       }
     } catch {
       // Registration failed — continue with local session only
     }
   }
 
+  const verified = identity.verified;
+
+  let identityLevel: string;
+  if (verified) {
+    identityLevel = 'verified';
+  } else if (agentName) {
+    identityLevel = 'persistent';
+  } else {
+    identityLevel = 'session';
+  }
+
   let note: string;
-  if (identityLevel === 'verified') {
-    note = 'Verified identity created with wallet ownership proof. Persisted to database.';
+  if (verified) {
+    note = 'Wallet ownership verified. Identity persisted to database with wallet-linked tier (governance weight: 2).';
+  } else if (walletAddress && signature) {
+    note = 'Signature verification failed — wallet not linked. Check that signature signs: "Ayni Protocol identity: <yourName>"';
   } else if (identityLevel === 'persistent' && registeredAgent) {
-    note = 'Persistent identity created and saved to database. Add walletAddress + signature to verify.';
+    note = 'Persistent identity created and saved to database. Add walletAddress + signature to verify and get governance weight 2.';
   } else if (identityLevel === 'persistent') {
     note = 'Persistent identity created (local only — server registration failed). Add walletAddress + signature to verify.';
   } else {
     note = 'Session ID created. Provide agentName for persistent identity or walletAddress + signature to verify.';
+  }
+
+  let tier: string;
+  if (verified) {
+    tier = 'wallet-linked';
+  } else if (agentName) {
+    tier = 'unverified';
+  } else {
+    tier = 'anonymous';
   }
 
   return {
@@ -908,8 +939,9 @@ async function handleIdentify(agentName?: string, walletAddress?: string, signat
     sessionId,
     identityLevel,
     agentName: agentName || 'Anonymous',
-    walletAddress: walletAddress || null,
+    walletAddress: verified ? walletAddress : null,
     verified,
+    tier,
     registeredAgent,
     note,
   };
@@ -1060,7 +1092,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         result = await handleAttest(
           args?.glyph as string,
           args?.data as object | undefined,
-          args?.recipient as string | undefined
+          args?.recipient as string | undefined,
+          args?.agentSignature as string | undefined,
+          args?.agentAddress as string | undefined
         );
         break;
 
