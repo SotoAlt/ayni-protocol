@@ -177,10 +177,10 @@ const COMBO_TO_GLYPH_ID = {
 };
 
 const GLYPH_ID_DOMAINS = {
-  Q01: 'humanoid', Q02: 'humanoid', Q03: 'humanoid',
+  Q01: 'humanoid', Q02: 'symbol', Q03: 'symbol',
   R01: 'humanoid', R02: 'humanoid', R03: 'humanoid',
-  E01: 'humanoid', E02: 'humanoid', E03: 'humanoid',
-  A01: 'humanoid', A02: 'humanoid', A03: 'humanoid',
+  E01: 'symbol', E02: 'creature', E03: 'symbol',
+  A01: 'symbol', A02: 'machine', A03: 'machine',
 };
 
 const GLYPH_ID_MEANINGS = {
