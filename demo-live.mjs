@@ -96,7 +96,7 @@ const SCENARIOS = [
 ];
 
 async function send(from, to, glyph, data) {
-  const body = { from, to, glyph, data: data || '' };
+  const body = { sender: from, recipient: to, glyph, data: { message: data || '' } };
   try {
     const resp = await fetch(`${BASE}/send`, {
       method: 'POST',
@@ -106,6 +106,7 @@ async function send(from, to, glyph, data) {
     const result = await resp.json();
     const ok = resp.ok ? '\x1b[32mOK\x1b[0m' : '\x1b[31mERR\x1b[0m';
     console.log(`  ${ok} ${from} → ${to}  ${glyph}  "${data || ''}"`);
+    if (!resp.ok) console.log(`     ${result.message || JSON.stringify(result)}`);
     return result;
   } catch (err) {
     console.error(`  \x1b[31mFAIL\x1b[0m ${from} → ${to}  ${glyph}: ${err.message}`);
@@ -124,7 +125,7 @@ async function runScenario(scenario) {
       continue;
     }
     await send(step.from, step.to, step.glyph, step.data);
-    await sleep(200); // small gap between rapid sends
+    await sleep(3200); // ~3s gap between sends to stay under 20/min rate limit
   }
 }
 
