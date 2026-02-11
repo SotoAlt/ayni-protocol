@@ -159,6 +159,37 @@ export class RealWebSocket {
 // MOCK WEBSOCKET - Simulated Messages
 // ═══════════════════════════════════════════════════════════════
 
+// Map old layer combos → new glyph IDs (for NANO rendering)
+const COMBO_TO_GLYPH_ID = {
+  '["asking","database"]': 'Q01',
+  '["asking","eye"]': 'Q02',
+  '["asking","server"]': 'Q03',
+  '["giving","checkmark"]': 'R01',
+  '["giving","database"]': 'R02',
+  '["giving","database","checkmark"]': 'R02',
+  '["celebrating","checkmark"]': 'R03',
+  '["waiting","x"]': 'E01',
+  '["waiting","clock","x"]': 'E02',
+  '["waiting","lock","x"]': 'E03',
+  '["running","lightning"]': 'A01',
+  '["giving","robot"]': 'A02',
+  '["running","database","arrow"]': 'A03',
+};
+
+const GLYPH_ID_DOMAINS = {
+  Q01: 'humanoid', Q02: 'humanoid', Q03: 'humanoid',
+  R01: 'humanoid', R02: 'humanoid', R03: 'humanoid',
+  E01: 'humanoid', E02: 'humanoid', E03: 'humanoid',
+  A01: 'humanoid', A02: 'humanoid', A03: 'humanoid',
+};
+
+const GLYPH_ID_MEANINGS = {
+  Q01: 'Query Database', Q02: 'Search', Q03: 'Query API',
+  R01: 'Response OK', R02: 'Data Response', R03: 'Task Complete',
+  E01: 'Error', E02: 'Timeout', E03: 'Permission Denied',
+  A01: 'Execute', A02: 'Delegate Task', A03: 'Update Data',
+};
+
 // Agent definitions with roles and visual identities
 const AGENTS = [
   { id: 'Alice', role: 'coordinator', figure: 'thinking' },
@@ -631,14 +662,21 @@ export class MockWebSocket {
   emitMessage(step) {
     const glyphs = step.glyphs || [step.glyph];
 
-    // Determine primary category from first glyph
-    const category = this.getCategoryFromGlyph(glyphs[0]);
+    // Auto-detect glyphId from layer combo
+    const glyphId = step.glyphId || COMBO_TO_GLYPH_ID[JSON.stringify(glyphs)] || null;
 
-    // Calculate byte size (64x64 = 512 bytes per glyph)
-    const size = glyphs.length * 512;
+    // Determine primary category from first glyph
+    const category = glyphId
+      ? (GLYPH_ID_DOMAINS[glyphId] || 'foundation')
+      : this.getCategoryFromGlyph(glyphs[0]);
+
+    // Calculate byte size (16x16 = 32 bytes per NANO glyph)
+    const size = glyphId ? 32 : glyphs.length * 512;
 
     // Get meaning
-    const meaning = getComboMeaning(glyphs);
+    const meaning = glyphId
+      ? (GLYPH_ID_MEANINGS[glyphId] || getComboMeaning(glyphs))
+      : getComboMeaning(glyphs);
 
     // Create message
     const message = {
@@ -647,6 +685,7 @@ export class MockWebSocket {
       to: step.to,
       glyphs: glyphs,
       glyph: glyphs[0], // Backward compatibility
+      glyphId: glyphId,
       category: category,
       meaning: meaning,
       timestamp: Date.now(),

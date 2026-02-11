@@ -179,6 +179,18 @@ function addLogEntry(msg, prepend = true) {
 }
 
 function handleMessage(msg) {
+  // Normalize: server WebSocket sends {glyph:'Q01', sender, recipient}
+  // Mock sends {glyphs:['asking','database'], glyphId:'Q01', from, to}
+  if (!msg.glyphId && msg.glyph && GLYPH_VISUAL[msg.glyph]) {
+    // Real server message — set glyphId + visual info
+    const visual = getVisual(msg.glyph);
+    msg.glyphId = msg.glyph;
+    msg.glyphs = msg.glyphs || visual.glyphs;
+    msg.category = msg.category || visual.category;
+    msg.meaning = msg.meaning || visual.meaning;
+    msg.from = msg.from || msg.sender;
+    msg.to = msg.to || msg.recipient;
+  }
   stream.addMessage(msg);
   addLogEntry(msg);
 }

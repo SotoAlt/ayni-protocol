@@ -10,6 +10,7 @@ import {
   GLYPH_MEANINGS,
   GLYPH_CATEGORIES,
   CATEGORY_COLORS,
+  NANO_GLYPHS,
   SIZE
 } from './glyphs.js';
 
@@ -113,8 +114,12 @@ export class GlyphStream {
     // Calculate total glyphs and required height
     let totalGlyphSlots = 0;
     this.messages.forEach(msg => {
-      const glyphs = msg.glyphs || [msg.glyph];
-      totalGlyphSlots += glyphs.length;
+      if (msg.glyphId && NANO_GLYPHS[msg.glyphId]) {
+        totalGlyphSlots += 1;
+      } else {
+        const glyphs = msg.glyphs || [msg.glyph];
+        totalGlyphSlots += glyphs.length;
+      }
     });
 
     const rows = Math.ceil(totalGlyphSlots / this.glyphsPerRow) || 1;
@@ -131,18 +136,29 @@ export class GlyphStream {
 
     this.messages.forEach(msg => {
       const glyphs = msg.glyphs || [msg.glyph];
+      const nanoId = msg.glyphId; // e.g. "Q01", "R02"
 
-      glyphs.forEach(glyphId => {
-        // Check if we need to wrap
+      // If we have a NANO glyph for this ID, render it as a single glyph
+      if (nanoId && NANO_GLYPHS[nanoId]) {
         if (currentX + this.displaySize > this.canvasWidth) {
           currentX = 0;
           currentY += this.displaySize;
         }
-
-        const category = this.getCategoryFromGlyph(glyphId);
-        this.renderGlyph(currentX, currentY, glyphId, category);
+        const domain = msg.category || 'symbol';
+        this.renderNanoGlyph(currentX, currentY, nanoId, domain);
         currentX += this.displaySize;
-      });
+      } else {
+        // Fallback: old layered approach
+        glyphs.forEach(glyphId => {
+          if (currentX + this.displaySize > this.canvasWidth) {
+            currentX = 0;
+            currentY += this.displaySize;
+          }
+          const category = this.getCategoryFromGlyph(glyphId);
+          this.renderGlyph(currentX, currentY, glyphId, category);
+          currentX += this.displaySize;
+        });
+      }
     });
   }
 
@@ -189,6 +205,34 @@ export class GlyphStream {
     }
 
     // Subtle grid line between glyphs
+    this.ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+    this.ctx.strokeRect(x, y, this.displaySize, this.displaySize);
+  }
+
+  /**
+   * Render a NANO glyph (redesigned 16x16 tocapu-style)
+   */
+  renderNanoGlyph(x, y, glyphId, domain) {
+    const grid = NANO_GLYPHS[glyphId];
+    if (!grid) return;
+
+    const color = CATEGORY_COLORS[domain] || CATEGORY_COLORS.symbol || '#00d9ff';
+    const scale = this.displaySize / this.glyphSize;
+
+    this.ctx.fillStyle = color;
+    for (let py = 0; py < this.glyphSize; py++) {
+      for (let px = 0; px < this.glyphSize; px++) {
+        if (grid[py] && grid[py][px]) {
+          this.ctx.fillRect(
+            x + Math.floor(px * scale),
+            y + Math.floor(py * scale),
+            Math.ceil(scale),
+            Math.ceil(scale)
+          );
+        }
+      }
+    }
+
     this.ctx.strokeStyle = 'rgba(255,255,255,0.03)';
     this.ctx.strokeRect(x, y, this.displaySize, this.displaySize);
   }
