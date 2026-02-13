@@ -120,6 +120,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_messages_glyph ON messages(glyph);
   CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender);
   CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient);
   CREATE INDEX IF NOT EXISTS idx_proposals_status ON proposals(status);
   CREATE INDEX IF NOT EXISTS idx_agents_tier ON agents(tier);
   CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);

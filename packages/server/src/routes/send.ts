@@ -5,6 +5,7 @@ import { monadTestnet, contracts, pricing } from '../config.js';
 import { MessageAttestationABI } from '../contracts.js';
 import { broadcastMessage } from './stream.js';
 import { proposalStore } from '../knowledge/patterns.js';
+import db from '../db.js';
 
 interface SendBody {
   glyph: string;
@@ -25,7 +26,8 @@ interface SendResponse {
   error?: string;
 }
 
-// Server wallet
+const AGORA_MAX_FIELD_LENGTH = 200;
+
 const serverPrivateKey = process.env.SERVER_PRIVATE_KEY || '0x0000000000000000000000000000000000000000000000000000000000000001';
 const serverAccount = privateKeyToAccount(serverPrivateKey as `0x${string}`);
 
@@ -128,6 +130,28 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
 
     const normalizedGlyph = glyph.toUpperCase().trim();
     const timestamp = Date.now();
+    const isAgora = recipient.toLowerCase() === 'agora';
+
+    if (isAgora) {
+      if (!sender) {
+        return reply.status(400).send({ error: 'sender is required for agora messages' });
+      }
+      const agent = db.prepare('SELECT address FROM agents WHERE name = ?').get(sender) as { address: string } | undefined;
+      if (!agent) {
+        return reply.status(403).send({
+          error: 'Registration required. Use POST /agents/register or ayni_identify first.',
+        });
+      }
+      if (data) {
+        for (const [key, value] of Object.entries(data)) {
+          if (typeof value === 'string' && value.length > AGORA_MAX_FIELD_LENGTH) {
+            return reply.status(400).send({
+              error: `data.${key} exceeds ${AGORA_MAX_FIELD_LENGTH} chars. Agora uses structured metadata, not natural language.`,
+            });
+          }
+        }
+      }
+    }
 
     // Compute message hash
     const messageHash = computeMessageHash({
@@ -144,6 +168,27 @@ export const sendRoute: FastifyPluginAsync = async (fastify) => {
       recipient,
       timestamp,
     };
+
+    // Agora messages skip attestation and relay
+    if (isAgora) {
+      response.success = true;
+      response.relayStatus = 'agora';
+
+      proposalStore.useCompound(normalizedGlyph);
+      proposalStore.useCustomGlyph(normalizedGlyph);
+
+      broadcastMessage({
+        glyph: normalizedGlyph,
+        data,
+        sender,
+        recipient: 'agora',
+        timestamp,
+        messageHash,
+        encrypted: false,
+      });
+
+      return response;
+    }
 
     // Step 1: Attest on-chain
     if (contracts.messageAttestation !== '0x0000000000000000000000000000000000000000') {

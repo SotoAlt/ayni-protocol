@@ -15,6 +15,7 @@ import { hashRoute } from './routes/hash.js';
 import { streamRoute, getClientCount } from './routes/stream.js';
 import { knowledgeRoute } from './routes/knowledge.js';
 import { agentsRoute } from './routes/agents.js';
+import { agoraRoute } from './routes/agora.js';
 import { knowledgeStore } from './knowledge/store.js';
 import { proposalStore } from './knowledge/patterns.js';
 import { GLYPHS } from './glyphs.js';
@@ -78,7 +79,7 @@ fastify.get('/', async () => {
       'POST /message/batch-hash': 'Batch compute hashes (free)',
       'GET /message/hash-preview': 'Preview hash for a glyph (free)',
       'POST /attest': 'Store message hash on-chain (0.01 MON)',
-      'POST /send': 'Relay + attest message (0.001 MON)',
+      'POST /send': 'Relay + attest message (0.001 MON). Use recipient: "agora" for public broadcast (free)',
       'GET /verify/:hash': 'Check if message was attested (free)',
       'GET /glyphs': 'List all registered glyphs (free)',
       'WS /stream': 'WebSocket for real-time message stream (free)',
@@ -101,6 +102,9 @@ fastify.get('/', async () => {
       'GET /agents': 'List registered agents (free)',
       'GET /agents/:address': 'Get agent by address (free)',
       'GET /agents/:address/verify': 'Check agent verification tier (free)',
+      'GET /agora/messages': 'Public agora timeline (free)',
+      'GET /agora/feed': 'Messages + governance events feed (free)',
+      'GET /agora/stats': 'Agora statistics (free)',
     },
     github: 'https://github.com/SotoAlt/ayni-protocol',
   };
@@ -117,6 +121,7 @@ fastify.register(hashRoute);
 fastify.register(streamRoute);
 fastify.register(knowledgeRoute);
 fastify.register(agentsRoute);
+fastify.register(agoraRoute);
 
 // Expire stale proposals every 60 seconds
 fastify.addHook('onReady', async () => {

@@ -20,6 +20,7 @@ const AGENT_NAMES: Record<string, string> = {
 
 function resolveAgentName(address: string | undefined): string {
   if (!address) return 'Unknown';
+  if (address.toLowerCase() === 'agora') return 'agora';
   return AGENT_NAMES[address] || address.substring(0, 8) + '...';
 }
 

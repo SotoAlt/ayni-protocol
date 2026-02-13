@@ -88,12 +88,20 @@ export const encodeRoute: FastifyPluginAsync = async (fastify) => {
 
     if (!glyphId) {
       const suggestions = findClosestKeywords(text, 3);
+      const inputWords = text.toLowerCase().split(/\s+/).filter(Boolean);
 
       return reply.status(400).send({
         error: 'No matching glyph found',
         text,
         suggestions,
         hint: `Did you mean: ${suggestions.join(', ')}?`,
+        proposeHint: 'No glyph for this concept? Propose one with POST /knowledge/propose/base-glyph or ayni_propose_base_glyph.',
+        proposeExample: {
+          name: inputWords[0] ? inputWords[0].charAt(0).toUpperCase() + inputWords[0].slice(1) : 'NewGlyph',
+          domain: 'community',
+          keywords: inputWords.slice(0, 3),
+          meaning: text.slice(0, 50),
+        },
       });
     }
 
