@@ -1,6 +1,6 @@
 {
   "name": "ayni-server",
-  "version": "0.3.0-alpha",
+  "version": "0.4.0-alpha",
   "description": "Open source Ayni Protocol server - anyone can run a node",
   "type": "module",
   "main": "dist/index.js",

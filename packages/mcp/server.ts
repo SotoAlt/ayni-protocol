@@ -1096,7 +1096,7 @@ async function handleSequences(): Promise<unknown> {
 const server = new Server(
   {
     name: 'ayni-protocol',
-    version: '0.3.0-alpha',
+    version: '0.4.0-alpha',
   },
   {
     capabilities: {

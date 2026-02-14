@@ -1,6 +1,6 @@
 {
   "name": "ayni-protocol",
-  "version": "0.3.0-alpha",
+  "version": "0.4.0-alpha",
   "description": "Visual glyph protocol for AI agent communication - co-created, DAO-governed, token-efficient",
   "main": "src/index.js",
   "type": "module",

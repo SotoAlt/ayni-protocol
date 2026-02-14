@@ -50,7 +50,7 @@ fastify.get('/health', async () => {
   const proposals = proposalStore.listProposals('all');
   return {
     status: 'ok',
-    version: '0.3.0-alpha',
+    version: '0.4.0-alpha',
     uptime: Math.floor((Date.now() - startTime) / 1000),
     storage: 'sqlite',
     wsClients: getClientCount(),
@@ -69,7 +69,7 @@ fastify.get('/health', async () => {
 fastify.get('/', async () => {
   return {
     name: 'Ayni Protocol Server',
-    version: '0.3.0-alpha',
+    version: '0.4.0-alpha',
     description: 'Crypto-native coordination layer for AI agents',
     glyphs: Object.keys(GLYPHS).length,
     endpoints: {
