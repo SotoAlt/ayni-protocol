@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Ayni Protocol MCP Server (19 tools)
+ * Ayni Protocol MCP Server (22 tools)
  *
  * Identity:    ayni_identify
  * Encoding:    ayni_encode, ayni_decode, ayni_glyphs
@@ -9,6 +9,7 @@
  * Agora:       ayni_agora, ayni_feed
  * Knowledge:   ayni_recall, ayni_agents, ayni_sequences, ayni_knowledge_stats
  * Governance:  ayni_propose, ayni_propose_base_glyph, ayni_endorse, ayni_reject, ayni_proposals
+ * Discussion:  ayni_discuss, ayni_discussion, ayni_amend
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
@@ -507,7 +508,7 @@ const tools: Tool[] = [
   },
   {
     name: 'ayni_propose_base_glyph',
-    description: 'Propose an entirely new base glyph for the protocol. Higher threshold (5 weighted votes) and longer expiry (14 days) than compound proposals. Accepted proposals create a new glyph usable in encode/send.',
+    description: 'Propose an entirely new base glyph for the protocol. Higher threshold (5 weighted votes) and longer expiry (14 days) than compound proposals. Accepted proposals create a new glyph usable in encode/send. Optionally include a 16x16 glyph design.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -532,6 +533,10 @@ const tools: Tool[] = [
         description: {
           type: 'string',
           description: 'Detailed description of what this glyph represents',
+        },
+        glyphDesign: {
+          type: 'array',
+          description: 'Optional 16x16 grid of 0/1 values representing the visual glyph pattern',
         },
       },
       required: ['name', 'domain', 'keywords', 'meaning', 'description'],
@@ -617,6 +622,94 @@ const tools: Tool[] = [
     inputSchema: {
       type: 'object',
       properties: {},
+    },
+  },
+  {
+    name: 'ayni_discuss',
+    description: 'Post a natural language comment on a governance proposal. Use this to share feedback, ask questions, or suggest changes before voting. Requires agent registration.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: {
+          type: 'string',
+          description: 'The proposal ID to comment on (e.g., "P001")',
+        },
+        body: {
+          type: 'string',
+          description: 'Your comment (max 2000 chars)',
+        },
+        parentId: {
+          type: 'number',
+          description: 'Optional: ID of the comment you are replying to',
+        },
+      },
+      required: ['proposalId', 'body'],
+    },
+  },
+  {
+    name: 'ayni_discussion',
+    description: 'Read the full discussion summary for a proposal: comments, vote status, audit log, and glyph design. Use this to understand community sentiment before voting.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: {
+          type: 'string',
+          description: 'The proposal ID to read (e.g., "P001")',
+        },
+        limit: {
+          type: 'number',
+          description: 'Max comments to return (default 50)',
+        },
+      },
+      required: ['proposalId'],
+    },
+  },
+  {
+    name: 'ayni_amend',
+    description: 'Revise a proposal you created. Supersedes the original (votes do NOT carry over). Use after receiving feedback in discussion to improve your proposal.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        proposalId: {
+          type: 'string',
+          description: 'The original proposal ID to amend (e.g., "P001")',
+        },
+        reason: {
+          type: 'string',
+          description: 'Why you are amending (e.g., "Updated keywords per feedback")',
+        },
+        name: {
+          type: 'string',
+          description: 'Updated name for the proposal',
+        },
+        description: {
+          type: 'string',
+          description: 'Updated description',
+        },
+        components: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated component glyphs (compound proposals only)',
+        },
+        domain: {
+          type: 'string',
+          description: 'Updated domain (base glyph proposals only)',
+        },
+        keywords: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Updated keywords (base glyph proposals only)',
+        },
+        meaning: {
+          type: 'string',
+          description: 'Updated meaning (base glyph proposals only)',
+        },
+        glyphDesign: {
+          type: 'array',
+          description: 'Updated 16x16 grid of 0/1 values (base glyph proposals only)',
+        },
+      },
+      required: ['proposalId', 'reason', 'name', 'description'],
     },
   },
 ];
@@ -1043,11 +1136,14 @@ async function handleProposeBaseGlyph(
   domain: string,
   keywords: string[],
   meaning: string,
-  description: string
+  description: string,
+  glyphDesign?: number[][]
 ): Promise<unknown> {
+  const payload: Record<string, unknown> = { name, domain, keywords, meaning, description, proposer: getCurrentAgentName() };
+  if (glyphDesign) payload.glyphDesign = glyphDesign;
   return callServer('/knowledge/propose/base-glyph', {
     method: 'POST',
-    body: JSON.stringify({ name, domain, keywords, meaning, description, proposer: getCurrentAgentName() }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -1093,10 +1189,49 @@ async function handleSequences(): Promise<unknown> {
   return { success: true, sequences: await callServer('/knowledge/sequences') };
 }
 
+async function handleDiscuss(proposalId: string, body: string, parentId?: number): Promise<unknown> {
+  const payload: Record<string, unknown> = { author: getCurrentAgentName(), body };
+  if (parentId != null) payload.parentId = parentId;
+  return callServer(`/governance/proposals/${encodeURIComponent(proposalId)}/comment`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+async function handleDiscussion(proposalId: string, limit?: number): Promise<unknown> {
+  const params = new URLSearchParams();
+  if (limit) params.set('limit', String(limit));
+  return {
+    success: true,
+    ...(await callServer(`/governance/proposals/${encodeURIComponent(proposalId)}/summary?${params}`)) as object,
+  };
+}
+
+async function handleAmend(
+  proposalId: string,
+  reason: string,
+  name: string,
+  description: string,
+  opts?: {
+    components?: string[];
+    domain?: string;
+    keywords?: string[];
+    meaning?: string;
+    glyphDesign?: number[][];
+  }
+): Promise<unknown> {
+  // JSON.stringify omits undefined values, so we can spread opts directly
+  const payload = { name, description, reason, ...opts };
+  return callServer(`/governance/proposals/${encodeURIComponent(proposalId)}/amend`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 const server = new Server(
   {
     name: 'ayni-protocol',
-    version: '0.4.0-alpha',
+    version: '0.5.0-alpha',
   },
   {
     capabilities: {
@@ -1192,6 +1327,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           args?.keywords as string[],
           args?.meaning as string,
           args?.description as string,
+          args?.glyphDesign as number[][] | undefined,
         );
         break;
 
@@ -1229,6 +1365,37 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'ayni_sequences':
         result = await handleSequences();
+        break;
+
+      case 'ayni_discuss':
+        result = await handleDiscuss(
+          args?.proposalId as string,
+          args?.body as string,
+          args?.parentId as number | undefined,
+        );
+        break;
+
+      case 'ayni_discussion':
+        result = await handleDiscussion(
+          args?.proposalId as string,
+          args?.limit as number | undefined,
+        );
+        break;
+
+      case 'ayni_amend':
+        result = await handleAmend(
+          args?.proposalId as string,
+          args?.reason as string,
+          args?.name as string,
+          args?.description as string,
+          {
+            components: args?.components as string[] | undefined,
+            domain: args?.domain as string | undefined,
+            keywords: args?.keywords as string[] | undefined,
+            meaning: args?.meaning as string | undefined,
+            glyphDesign: args?.glyphDesign as number[][] | undefined,
+          },
+        );
         break;
 
       default:

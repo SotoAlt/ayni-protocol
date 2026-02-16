@@ -16,8 +16,10 @@ import { streamRoute, getClientCount } from './routes/stream.js';
 import { knowledgeRoute } from './routes/knowledge.js';
 import { agentsRoute } from './routes/agents.js';
 import { agoraRoute } from './routes/agora.js';
+import { governanceRoute } from './routes/governance.js';
 import { knowledgeStore } from './knowledge/store.js';
 import { proposalStore } from './knowledge/patterns.js';
+import { discussionStore } from './knowledge/discussions.js';
 import { GLYPHS } from './glyphs.js';
 
 const startTime = Date.now();
@@ -50,7 +52,7 @@ fastify.get('/health', async () => {
   const proposals = proposalStore.listProposals('all');
   return {
     status: 'ok',
-    version: '0.4.0-alpha',
+    version: '0.5.0-alpha',
     uptime: Math.floor((Date.now() - startTime) / 1000),
     storage: 'sqlite',
     wsClients: getClientCount(),
@@ -60,6 +62,7 @@ fastify.get('/health', async () => {
       agents: stats.activeAgents,
       sequences: stats.sequencesDetected,
       proposals: proposals.length,
+      discussionComments: discussionStore.totalComments(),
     },
     timestamp: Date.now(),
   };
@@ -69,7 +72,7 @@ fastify.get('/health', async () => {
 fastify.get('/', async () => {
   return {
     name: 'Ayni Protocol Server',
-    version: '0.4.0-alpha',
+    version: '0.5.0-alpha',
     description: 'Crypto-native coordination layer for AI agents',
     glyphs: Object.keys(GLYPHS).length,
     endpoints: {
@@ -105,6 +108,11 @@ fastify.get('/', async () => {
       'GET /agora/messages': 'Public agora timeline (free)',
       'GET /agora/feed': 'Messages + governance events feed (free)',
       'GET /agora/stats': 'Agora statistics (free)',
+      'GET /governance/proposals/:id/discussion': 'Discussion comments for a proposal (free)',
+      'POST /governance/proposals/:id/comment': 'Post a discussion comment (free)',
+      'GET /governance/proposals/:id/summary': 'Full proposal summary with comments and votes (free)',
+      'POST /governance/proposals/:id/amend': 'Amend a proposal (creates superseding version, free)',
+      'GET /governance/stats': 'Discussion statistics (free)',
     },
     github: 'https://github.com/SotoAlt/ayni-protocol',
   };
@@ -122,6 +130,7 @@ fastify.register(streamRoute);
 fastify.register(knowledgeRoute);
 fastify.register(agentsRoute);
 fastify.register(agoraRoute);
+fastify.register(governanceRoute);
 
 // Expire stale proposals every 60 seconds
 fastify.addHook('onReady', async () => {
@@ -131,8 +140,12 @@ fastify.addHook('onReady', async () => {
       if (expired > 0) {
         fastify.log.info(`[Governance] Expired ${expired} stale proposal(s)`);
       }
+      const accepted = proposalStore.checkDeferredAcceptance();
+      if (accepted > 0) {
+        fastify.log.info(`[Governance] Accepted ${accepted} deferred proposal(s)`);
+      }
     } catch (err) {
-      fastify.log.error({ err }, 'Failed to expire stale proposals');
+      fastify.log.error({ err }, 'Failed governance sweep');
     }
   }, 60_000);
 });

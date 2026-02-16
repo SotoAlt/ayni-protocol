@@ -1,5 +1,7 @@
 import { FastifyPluginAsync } from 'fastify';
 import db from '../db.js';
+import { discussionStore, DiscussionComment } from '../knowledge/discussions.js';
+import { clampInt } from '../utils.js';
 
 interface CountRow {
   c: number;
@@ -71,13 +73,35 @@ function formatGovernanceEvent(row: GovernanceRow): FormattedGovernanceEvent {
   };
 }
 
+interface FormattedDiscussionComment {
+  type: 'discussion';
+  id: number;
+  proposalId: string;
+  author: string;
+  body: string;
+  parentId: number | null;
+  timestamp: number;
+}
+
+function formatDiscussionComment(c: DiscussionComment): FormattedDiscussionComment {
+  return {
+    type: 'discussion',
+    id: c.id,
+    proposalId: c.proposalId,
+    author: c.author,
+    body: c.body,
+    parentId: c.parentId,
+    timestamp: c.createdAt,
+  };
+}
+
 export const agoraRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get('/agora/messages', async (request) => {
     const { limit: rawLimit, offset: rawOffset, since, sender, glyph } =
       request.query as Record<string, string | undefined>;
 
-    const limit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 200);
-    const offset = Math.max(parseInt(rawOffset || '0', 10), 0);
+    const limit = clampInt(rawLimit, 1, 200, 50);
+    const offset = clampInt(rawOffset, 0, Infinity, 0);
 
     const conditions: string[] = ["recipient = 'agora'"];
     const params: unknown[] = [];
@@ -116,7 +140,7 @@ export const agoraRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get('/agora/feed', async (request) => {
     const { limit: rawLimit, since } = request.query as Record<string, string | undefined>;
 
-    const limit = Math.min(Math.max(parseInt(rawLimit || '30', 10), 1), 100);
+    const limit = clampInt(rawLimit, 1, 100, 30);
     const sinceTs = since ? parseInt(since, 10) : 0;
 
     const messages = db.prepare(
@@ -127,9 +151,14 @@ export const agoraRoute: FastifyPluginAsync = async (fastify) => {
       `SELECT * FROM governance_log WHERE timestamp > ? ORDER BY timestamp DESC LIMIT ?`
     ).all(sinceTs, limit) as GovernanceRow[];
 
+    const recentDiscussion = discussionStore.recentComments(limit)
+      .filter((c) => sinceTs === 0 || c.createdAt > sinceTs)
+      .map(formatDiscussionComment);
+
     const items = [
       ...messages.map(formatMessage),
       ...governance.map(formatGovernanceEvent),
+      ...recentDiscussion,
     ].sort((a, b) => b.timestamp - a.timestamp).slice(0, limit);
 
     return {

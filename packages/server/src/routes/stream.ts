@@ -36,6 +36,24 @@ export interface BroadcastMessage {
 }
 
 /**
+ * Broadcast a governance event (comment, amend) to all WebSocket clients
+ */
+export function broadcastGovernanceEvent(event: {
+  type: 'governance_comment' | 'governance_amend';
+  proposalId: string;
+  author: string;
+  body?: string;
+  timestamp: number;
+}): void {
+  const payload = JSON.stringify(event);
+  for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  }
+}
+
+/**
  * Broadcast a message to all connected WebSocket clients
  */
 export function broadcastMessage(message: BroadcastMessage): void {

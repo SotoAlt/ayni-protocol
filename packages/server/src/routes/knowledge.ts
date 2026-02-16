@@ -14,12 +14,9 @@ import {
   BASE_GLYPH_ENDORSEMENT_THRESHOLD,
   REJECTION_THRESHOLD,
 } from '../knowledge/patterns.js';
+import { discussionStore } from '../knowledge/discussions.js';
 import { requireAdmin } from '../middleware/admin.js';
-
-function clampInt(value: string | undefined, min: number, max: number, fallback: number): number {
-  const parsed = parseInt(value || '', 10);
-  return Math.min(Math.max(Number.isNaN(parsed) ? fallback : parsed, min), max);
-}
+import { clampInt } from '../utils.js';
 
 export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
   fastify.get('/knowledge', async () => {
@@ -213,6 +210,7 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
       meaning: string;
       description: string;
       proposer: string;
+      glyphDesign?: number[][];
     };
   }>(
     '/knowledge/propose/base-glyph',
@@ -229,14 +227,15 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
             meaning: { type: 'string' },
             description: { type: 'string' },
             proposer: { type: 'string' },
+            glyphDesign: { type: 'array' },
           },
         },
       },
     },
     async (request, reply) => {
-      const { name, domain, keywords, meaning, description, proposer } = request.body;
+      const { name, domain, keywords, meaning, description, proposer, glyphDesign } = request.body;
       try {
-        const proposal = proposalStore.proposeBaseGlyph(name, domain, keywords, meaning, description, proposer);
+        const proposal = proposalStore.proposeBaseGlyph(name, domain, keywords, meaning, description, proposer, glyphDesign);
         const remaining = BASE_GLYPH_ENDORSEMENT_THRESHOLD - proposal.endorsers.length;
         return {
           success: true,
@@ -289,6 +288,9 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
           note = `Proposal accepted! Base glyph ${result.newBaseGlyph.id} "${result.newBaseGlyph.meaning}" created.`;
         } else if (proposal.status === 'accepted') {
           note = 'Proposal was already accepted.';
+        } else if (result.deferred) {
+          const evalDate = proposal.minVoteAt ? new Date(proposal.minVoteAt).toISOString() : 'unknown';
+          note = `Vote recorded. Threshold evaluation deferred until vote window ends (${evalDate}).`;
         } else {
           note = `Endorsed. Needs more endorsement weight (threshold: ${threshold}).`;
         }
@@ -299,6 +301,7 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
           status: proposal.status,
           newCompound: result.newCompound || null,
           newBaseGlyph: result.newBaseGlyph || null,
+          deferred: result.deferred || false,
           note,
         };
       } catch (err) {
@@ -383,6 +386,7 @@ export const knowledgeRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post('/knowledge/reset', { preHandler: requireAdmin }, async () => {
     knowledgeStore.reset();
     proposalStore.reset();
-    return { success: true, message: 'Knowledge store and proposals reset' };
+    discussionStore.reset();
+    return { success: true, message: 'Knowledge store, proposals, and discussions reset' };
   });
 };

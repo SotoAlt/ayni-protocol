@@ -125,12 +125,28 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_agents_tier ON agents(tier);
   CREATE INDEX IF NOT EXISTS idx_agents_name ON agents(name);
   CREATE INDEX IF NOT EXISTS idx_gov_log_proposal ON governance_log(proposal_id);
+
+  CREATE TABLE IF NOT EXISTS discussion_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    proposal_id TEXT NOT NULL,
+    author TEXT NOT NULL,
+    body TEXT NOT NULL,
+    parent_id INTEGER,
+    created_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_comments_proposal ON discussion_comments(proposal_id);
+  CREATE INDEX IF NOT EXISTS idx_comments_created ON discussion_comments(created_at);
 `);
 
 // Safe migrations for existing proposals table (add new columns)
 try { db.exec('ALTER TABLE proposals ADD COLUMN type TEXT NOT NULL DEFAULT \'compound\''); } catch { /* column exists */ }
 try { db.exec('ALTER TABLE proposals ADD COLUMN rejectors TEXT NOT NULL DEFAULT \'[]\''); } catch { /* column exists */ }
 try { db.exec('ALTER TABLE proposals ADD COLUMN expires_at INTEGER'); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN min_vote_at INTEGER'); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN glyph_design TEXT'); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN supersedes TEXT'); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE proposals ADD COLUMN superseded_by TEXT'); } catch { /* column exists */ }
+try { db.exec('ALTER TABLE custom_glyphs ADD COLUMN glyph_design TEXT'); } catch { /* column exists */ }
 
 // Import existing JSON data on first run
 function importJsonIfNeeded(): void {

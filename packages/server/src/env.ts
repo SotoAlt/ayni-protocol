@@ -28,6 +28,8 @@ if (isProduction) {
   }
 }
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   port: parseInt(process.env.PORT || '3000', 10),
@@ -38,4 +40,6 @@ export const env = {
     .map((s) => s.trim())
     .filter(Boolean),
   isProduction,
+  minVoteWindowMs: parseInt(process.env.MIN_VOTE_WINDOW_MS || String(ONE_DAY_MS), 10),
+  minBaseVoteWindowMs: parseInt(process.env.MIN_BASE_VOTE_WINDOW_MS || String(2 * ONE_DAY_MS), 10),
 } as const;

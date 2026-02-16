@@ -13,6 +13,7 @@
  */
 
 import db from '../db.js';
+import { env } from '../env.js';
 import { GLYPHS } from '../glyphs.js';
 
 export const ENDORSEMENT_THRESHOLD = 3;
@@ -22,7 +23,7 @@ export const COMPOUND_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000;   // 7 days
 export const BASE_GLYPH_EXPIRY_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 export type ProposalType = 'compound' | 'base_glyph';
-export type ProposalStatus = 'pending' | 'accepted' | 'ratified' | 'rejected' | 'expired';
+export type ProposalStatus = 'pending' | 'accepted' | 'ratified' | 'rejected' | 'expired' | 'superseded';
 
 const VALID_DOMAINS = ['foundation', 'crypto', 'agent', 'state', 'error', 'payment', 'community'] as const;
 export type GlyphDomain = typeof VALID_DOMAINS[number];
@@ -46,6 +47,10 @@ export interface Proposal {
   createdAt: number;
   acceptedAt?: number;
   expiresAt: number;
+  minVoteAt?: number;
+  glyphDesign?: number[][];
+  supersedes?: string;
+  supersededBy?: string;
 }
 
 export interface CompoundGlyph {
@@ -73,10 +78,16 @@ export interface CustomGlyph {
 const stmts = {
   getProposal: db.prepare('SELECT * FROM proposals WHERE id = ?'),
   insertProposal: db.prepare(
-    'INSERT INTO proposals (id, name, components, description, proposer, endorsers, rejectors, status, type, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO proposals (id, name, components, description, proposer, endorsers, rejectors, status, type, created_at, expires_at, min_vote_at, glyph_design, supersedes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ),
   updateProposal: db.prepare(
     'UPDATE proposals SET endorsers = ?, rejectors = ?, status = ?, accepted_at = ? WHERE id = ?'
+  ),
+  setSupersededBy: db.prepare(
+    "UPDATE proposals SET superseded_by = ?, status = 'superseded' WHERE id = ?"
+  ),
+  pendingPastVoteWindow: db.prepare(
+    "SELECT * FROM proposals WHERE status = 'pending' AND min_vote_at IS NOT NULL AND min_vote_at < ?"
   ),
   maxProposalId: db.prepare("SELECT MAX(CAST(SUBSTR(id, 2) AS INTEGER)) as max_id FROM proposals"),
   allProposals: db.prepare('SELECT * FROM proposals'),
@@ -118,6 +129,10 @@ const stmts = {
 };
 
 function rowToProposal(row: any): Proposal {
+  let glyphDesign: number[][] | undefined;
+  if (row.glyph_design) {
+    try { glyphDesign = JSON.parse(row.glyph_design); } catch { /* ignore */ }
+  }
   return {
     id: row.id,
     name: row.name,
@@ -131,6 +146,10 @@ function rowToProposal(row: any): Proposal {
     createdAt: row.created_at,
     acceptedAt: row.accepted_at || undefined,
     expiresAt: row.expires_at || (row.created_at + COMPOUND_EXPIRY_MS),
+    minVoteAt: row.min_vote_at || undefined,
+    glyphDesign,
+    supersedes: row.supersedes || undefined,
+    supersededBy: row.superseded_by || undefined,
   };
 }
 
@@ -213,10 +232,12 @@ export class ProposalStore {
     const now = Date.now();
     const endorsers = [proposer];
     const expiresAt = now + COMPOUND_EXPIRY_MS;
+    const minVoteAt = now + env.minVoteWindowMs;
 
     stmts.insertProposal.run(
       id, name, JSON.stringify(components), description,
-      proposer, JSON.stringify(endorsers), '[]', 'pending', 'compound', now, expiresAt
+      proposer, JSON.stringify(endorsers), '[]', 'pending', 'compound', now, expiresAt,
+      minVoteAt, null, null
     );
 
     this.logAction(id, 'propose', proposer);
@@ -224,8 +245,24 @@ export class ProposalStore {
     return {
       id, name, components, description, proposer,
       endorsers, rejectors: [], status: 'pending',
-      type: 'compound', createdAt: now, expiresAt,
+      type: 'compound', createdAt: now, expiresAt, minVoteAt,
     };
+  }
+
+  static validateGlyphDesign(design: number[][]): void {
+    if (!Array.isArray(design) || design.length !== 16) {
+      throw new Error('Glyph design must be an array of 16 rows');
+    }
+    for (let i = 0; i < 16; i++) {
+      if (!Array.isArray(design[i]) || design[i].length !== 16) {
+        throw new Error(`Glyph design row ${i} must be an array of 16 values`);
+      }
+      for (let j = 0; j < 16; j++) {
+        if (design[i][j] !== 0 && design[i][j] !== 1) {
+          throw new Error(`Glyph design values must be 0 or 1 (found ${design[i][j]} at [${i}][${j}])`);
+        }
+      }
+    }
   }
 
   proposeBaseGlyph(
@@ -234,7 +271,8 @@ export class ProposalStore {
     keywords: string[],
     meaning: string,
     description: string,
-    proposer: string
+    proposer: string,
+    glyphDesign?: number[][]
   ): Proposal {
     if (!VALID_DOMAINS.includes(domain as any)) {
       throw new Error(`Invalid domain: ${domain}. Must be one of: ${VALID_DOMAINS.join(', ')}`);
@@ -242,11 +280,15 @@ export class ProposalStore {
     if (!keywords.length) {
       throw new Error('Keywords must not be empty');
     }
+    if (glyphDesign) {
+      ProposalStore.validateGlyphDesign(glyphDesign);
+    }
 
     const id = `P${String(this.nextId++).padStart(3, '0')}`;
     const now = Date.now();
     const endorsers = [proposer];
     const expiresAt = now + BASE_GLYPH_EXPIRY_MS;
+    const minVoteAt = now + env.minBaseVoteWindowMs;
 
     // Reuse components field for keywords; pack full metadata into description as JSON
     const components = keywords;
@@ -254,7 +296,8 @@ export class ProposalStore {
 
     stmts.insertProposal.run(
       id, name, JSON.stringify(components), fullDescription,
-      proposer, JSON.stringify(endorsers), '[]', 'pending', 'base_glyph', now, expiresAt
+      proposer, JSON.stringify(endorsers), '[]', 'pending', 'base_glyph', now, expiresAt,
+      minVoteAt, glyphDesign ? JSON.stringify(glyphDesign) : null, null
     );
 
     this.logAction(id, 'propose', proposer);
@@ -262,14 +305,15 @@ export class ProposalStore {
     return {
       id, name, components, description: fullDescription, proposer,
       endorsers, rejectors: [], status: 'pending',
-      type: 'base_glyph', createdAt: now, expiresAt,
+      type: 'base_glyph', createdAt: now, expiresAt, minVoteAt,
+      glyphDesign,
     };
   }
 
   endorse(
     proposalId: string,
     agent: string
-  ): { proposal: Proposal; newCompound?: CompoundGlyph; newBaseGlyph?: CustomGlyph } {
+  ): { proposal: Proposal; newCompound?: CompoundGlyph; newBaseGlyph?: CustomGlyph; deferred?: boolean } {
     const row = stmts.getProposal.get(proposalId) as any;
     if (!row) {
       throw new Error(`Proposal ${proposalId} not found`);
@@ -290,6 +334,35 @@ export class ProposalStore {
     proposal.endorsers.push(agent);
     this.logAction(proposalId, 'endorse', agent);
 
+    let newCompound: CompoundGlyph | undefined;
+    let newBaseGlyph: CustomGlyph | undefined;
+    let deferred = false;
+
+    // If within vote window, record the vote but defer threshold evaluation
+    const now = Date.now();
+    if (proposal.minVoteAt && now < proposal.minVoteAt) {
+      deferred = true;
+    } else {
+      // Past the vote window (or no window): evaluate threshold immediately
+      const result = this.evaluateThreshold(proposal);
+      newCompound = result.newCompound;
+      newBaseGlyph = result.newBaseGlyph;
+    }
+
+    stmts.updateProposal.run(
+      JSON.stringify(proposal.endorsers),
+      JSON.stringify(proposal.rejectors),
+      proposal.status,
+      proposal.acceptedAt || null,
+      proposalId
+    );
+
+    return { proposal, newCompound, newBaseGlyph, deferred };
+  }
+
+  private evaluateThreshold(
+    proposal: Proposal
+  ): { newCompound?: CompoundGlyph; newBaseGlyph?: CustomGlyph } {
     const weightedVotes = computeWeightedVotes(proposal.endorsers);
     const threshold = proposal.type === 'base_glyph'
       ? BASE_GLYPH_ENDORSEMENT_THRESHOLD
@@ -301,7 +374,7 @@ export class ProposalStore {
     if (weightedVotes >= threshold) {
       proposal.status = 'accepted';
       proposal.acceptedAt = Date.now();
-      this.logAction(proposalId, 'accept', 'system');
+      this.logAction(proposal.id, 'accept', 'system');
 
       if (proposal.type === 'compound') {
         newCompound = this.createCompound(proposal);
@@ -310,15 +383,7 @@ export class ProposalStore {
       }
     }
 
-    stmts.updateProposal.run(
-      JSON.stringify(proposal.endorsers),
-      JSON.stringify(proposal.rejectors),
-      proposal.status,
-      proposal.acceptedAt || null,
-      proposalId
-    );
-
-    return { proposal, newCompound, newBaseGlyph };
+    return { newCompound, newBaseGlyph };
   }
 
   reject(proposalId: string, agent: string): { proposal: Proposal } {
@@ -418,6 +483,14 @@ export class ProposalStore {
       proposal.id, now
     );
 
+    // Store glyph design if proposal had one
+    if (proposal.glyphDesign) {
+      try {
+        db.prepare('UPDATE custom_glyphs SET glyph_design = ? WHERE id = ?')
+          .run(JSON.stringify(proposal.glyphDesign), id);
+      } catch { /* column may not exist on very old DBs */ }
+    }
+
     return {
       id,
       meaning: meta.meaning,
@@ -482,6 +555,180 @@ export class ProposalStore {
 
   useCustomGlyph(id: string): void {
     stmts.useCustomGlyph.run(id);
+  }
+
+  /**
+   * Check proposals past their vote window and evaluate thresholds.
+   * Called periodically alongside expireStale().
+   */
+  checkDeferredAcceptance(): number {
+    const now = Date.now();
+    const rows = stmts.pendingPastVoteWindow.all(now) as any[];
+    let accepted = 0;
+
+    for (const row of rows) {
+      const proposal = rowToProposal(row);
+      const result = this.evaluateThreshold(proposal);
+
+      stmts.updateProposal.run(
+        JSON.stringify(proposal.endorsers),
+        JSON.stringify(proposal.rejectors),
+        proposal.status,
+        proposal.acceptedAt || null,
+        proposal.id
+      );
+
+      if (result.newCompound || result.newBaseGlyph) {
+        accepted++;
+      }
+    }
+
+    return accepted;
+  }
+
+  /**
+   * Amend a proposal: supersede the original and create a new revised version.
+   * Only the original proposer can amend. Only pending proposals can be amended.
+   * Votes do NOT carry over — voters must re-endorse the new version.
+   */
+  amend(
+    originalId: string,
+    opts: {
+      name: string;
+      description: string;
+      proposer: string;
+      reason: string;
+      // For compound proposals
+      components?: string[];
+      // For base glyph proposals
+      domain?: string;
+      keywords?: string[];
+      meaning?: string;
+      glyphDesign?: number[][];
+    }
+  ): { original: Proposal; amended: Proposal } {
+    const row = stmts.getProposal.get(originalId) as any;
+    if (!row) {
+      throw new Error(`Proposal ${originalId} not found`);
+    }
+
+    const original = rowToProposal(row);
+
+    if (original.status !== 'pending') {
+      throw new Error(`Cannot amend proposal ${originalId}: status is "${original.status}" (must be pending)`);
+    }
+    if (original.proposer !== opts.proposer) {
+      throw new Error(`Only the original proposer (${original.proposer}) can amend this proposal`);
+    }
+
+    // Create the new proposal
+    let amended: Proposal;
+    if (original.type === 'base_glyph') {
+      let meta: { meaning: string; description: string; domain: string; keywords: string[] };
+      try { meta = JSON.parse(original.description); } catch {
+        meta = { meaning: original.name, description: original.description, domain: 'community', keywords: original.components };
+      }
+      if (opts.glyphDesign) {
+        ProposalStore.validateGlyphDesign(opts.glyphDesign);
+      }
+      amended = this.proposeBaseGlyphInternal(
+        opts.name,
+        opts.domain || meta.domain,
+        opts.keywords || meta.keywords,
+        opts.meaning || meta.meaning,
+        opts.description || meta.description,
+        opts.proposer,
+        opts.glyphDesign,
+        originalId
+      );
+    } else {
+      amended = this.proposeCompoundInternal(
+        opts.name,
+        opts.components || original.components,
+        opts.description || original.description,
+        opts.proposer,
+        originalId
+      );
+    }
+
+    // Mark original as superseded
+    stmts.setSupersededBy.run(amended.id, originalId);
+    original.status = 'superseded';
+    original.supersededBy = amended.id;
+
+    this.logAction(originalId, 'superseded', opts.proposer);
+    this.logAction(amended.id, 'amend', opts.proposer);
+
+    return { original, amended };
+  }
+
+  private proposeCompoundInternal(
+    name: string,
+    components: string[],
+    description: string,
+    proposer: string,
+    supersedes: string
+  ): Proposal {
+    this.validateComponents(components);
+
+    const id = `P${String(this.nextId++).padStart(3, '0')}`;
+    const now = Date.now();
+    const endorsers = [proposer];
+    const expiresAt = now + COMPOUND_EXPIRY_MS;
+    const minVoteAt = now + env.minVoteWindowMs;
+
+    stmts.insertProposal.run(
+      id, name, JSON.stringify(components), description,
+      proposer, JSON.stringify(endorsers), '[]', 'pending', 'compound', now, expiresAt,
+      minVoteAt, null, supersedes
+    );
+
+    this.logAction(id, 'propose', proposer);
+
+    return {
+      id, name, components, description, proposer,
+      endorsers, rejectors: [], status: 'pending',
+      type: 'compound', createdAt: now, expiresAt, minVoteAt,
+      supersedes,
+    };
+  }
+
+  private proposeBaseGlyphInternal(
+    name: string,
+    domain: string,
+    keywords: string[],
+    meaning: string,
+    description: string,
+    proposer: string,
+    glyphDesign: number[][] | undefined,
+    supersedes: string
+  ): Proposal {
+    if (!VALID_DOMAINS.includes(domain as any)) {
+      throw new Error(`Invalid domain: ${domain}. Must be one of: ${VALID_DOMAINS.join(', ')}`);
+    }
+
+    const id = `P${String(this.nextId++).padStart(3, '0')}`;
+    const now = Date.now();
+    const endorsers = [proposer];
+    const expiresAt = now + BASE_GLYPH_EXPIRY_MS;
+    const minVoteAt = now + env.minBaseVoteWindowMs;
+    const components = keywords;
+    const fullDescription = JSON.stringify({ meaning, description, domain, keywords });
+
+    stmts.insertProposal.run(
+      id, name, JSON.stringify(components), fullDescription,
+      proposer, JSON.stringify(endorsers), '[]', 'pending', 'base_glyph', now, expiresAt,
+      minVoteAt, glyphDesign ? JSON.stringify(glyphDesign) : null, supersedes
+    );
+
+    this.logAction(id, 'propose', proposer);
+
+    return {
+      id, name, components, description: fullDescription, proposer,
+      endorsers, rejectors: [], status: 'pending',
+      type: 'base_glyph', createdAt: now, expiresAt, minVoteAt,
+      glyphDesign, supersedes,
+    };
   }
 
   reset(): void {
