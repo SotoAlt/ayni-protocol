@@ -82,6 +82,12 @@ function debug(msg) {
 let stream, ws;
 let currentMode = 'auto'; // 'real', 'mock', or 'auto'
 let knowledgePollTimer = null;
+let agoraPollTimer = null;
+let govPollTimer = null;
+let activeTab = 'stream';
+let agoraLoaded = false;
+let govLoaded = false;
+let openProposalId = null;
 
 function formatBytes(bytes) {
   if (bytes < 1024) return bytes + 'B';
@@ -179,6 +185,14 @@ function addLogEntry(msg, prepend = true) {
 }
 
 function handleMessage(msg) {
+  // Route governance events before glyph processing
+  if (msg.type === 'governance_comment' || msg.type === 'governance_amend' ||
+      msg.type === 'governance_endorse' || msg.type === 'governance_reject' ||
+      msg.type === 'governance_propose') {
+    handleGovernanceEvent(msg);
+    return;
+  }
+
   // Normalize: server WebSocket sends {glyph:'Q01', sender, recipient}
   // Mock sends {glyphs:['asking','database'], glyphId:'Q01', from, to}
   if (!msg.glyphId && msg.glyph && GLYPH_VISUAL[msg.glyph]) {
@@ -315,6 +329,405 @@ function createMockWebSocket() {
   });
 }
 
+// ═══════════════════════════════════════════════════════════
+// TAB SWITCHING
+// ═══════════════════════════════════════════════════════════
+
+function initTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      if (tab === activeTab) return;
+
+      // Toggle active class on buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      // Toggle active class on content
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const content = document.querySelector(`.tab-content[data-tab="${tab}"]`);
+      if (content) content.classList.add('active');
+
+      // Stop polling for old tab
+      stopTabPolling(activeTab);
+      activeTab = tab;
+
+      // Lazy-load + start polling for new tab
+      if (tab === 'agora') {
+        if (currentMode === 'mock') {
+          document.getElementById('agora-demo').style.display = 'flex';
+          document.getElementById('agora-feed').style.display = 'none';
+          const s = document.getElementById('agora-stats');
+          if (s) s.textContent = 'DEMO MODE';
+        } else {
+          document.getElementById('agora-demo').style.display = 'none';
+          document.getElementById('agora-feed').style.display = '';
+          if (!agoraLoaded) { loadAgoraFeed(); agoraLoaded = true; }
+          startAgoraPolling();
+        }
+      } else if (tab === 'gov') {
+        if (currentMode === 'mock') {
+          document.getElementById('gov-demo').style.display = 'flex';
+          document.getElementById('proposal-list').style.display = 'none';
+          const s = document.getElementById('gov-stats');
+          if (s) s.textContent = 'DEMO MODE';
+        } else {
+          document.getElementById('gov-demo').style.display = 'none';
+          document.getElementById('proposal-list').style.display = '';
+          if (!govLoaded) { loadProposals(); govLoaded = true; }
+          startGovPolling();
+        }
+      } else if (tab === 'stream' && currentMode === 'real') {
+        startKnowledgePolling();
+      }
+    });
+  });
+}
+
+function stopTabPolling(tab) {
+  if (tab === 'agora' && agoraPollTimer) {
+    clearInterval(agoraPollTimer);
+    agoraPollTimer = null;
+  }
+  if (tab === 'gov' && govPollTimer) {
+    clearInterval(govPollTimer);
+    govPollTimer = null;
+  }
+  if (tab === 'stream' && knowledgePollTimer) {
+    clearInterval(knowledgePollTimer);
+    knowledgePollTimer = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// AGORA FEED
+// ═══════════════════════════════════════════════════════════
+
+function startAgoraPolling() {
+  loadAgoraFeed();
+  agoraPollTimer = setInterval(loadAgoraFeed, 10000);
+}
+
+async function loadAgoraFeed() {
+  try {
+    const [feedResp, statsResp] = await Promise.all([
+      fetch(`${API_BASE}/agora/feed?limit=50`),
+      fetch(`${API_BASE}/agora/stats`)
+    ]);
+    if (!feedResp.ok) return;
+
+    const feed = await feedResp.json();
+    const statsEl = document.getElementById('agora-stats');
+    if (statsResp.ok) {
+      const stats = await statsResp.json();
+      if (statsEl) {
+        statsEl.textContent = `MSGS: ${stats.totalMessages || 0} | AGENTS: ${stats.uniqueAgents || 0}`;
+      }
+    }
+
+    const feedEl = document.getElementById('agora-feed');
+    if (!feedEl) return;
+
+    const items = feed.items || feed.messages || feed || [];
+    feedEl.innerHTML = '';
+
+    for (const entry of items) {
+      feedEl.appendChild(renderAgoraEntry(entry));
+    }
+  } catch {
+    // Server unavailable
+  }
+}
+
+function renderAgoraEntry(entry) {
+  const div = document.createElement('div');
+  div.className = 'agora-entry';
+
+  const time = formatTime(entry.timestamp || entry.created_at || Date.now());
+
+  if (entry.type === 'message' || entry.glyph) {
+    const glyph = entry.glyph || '?';
+    const agent = (entry.sender || entry.from || '').substring(0, 10);
+    div.innerHTML =
+      `<span class="agora-type agora-type-msg">MSG</span>` +
+      `<span class="agora-time">${time}</span> ` +
+      `<span class="agora-agent">${agent}</span> ` +
+      `<span class="log-glyph glyph-foundation">${glyph}</span>`;
+  } else if (entry.type === 'discussion' || entry.type === 'comment') {
+    const agent = (entry.author || entry.agent || '').substring(0, 10);
+    const body = (entry.body || '').substring(0, 60);
+    const pid = entry.proposal_id || entry.proposalId || '?';
+    div.innerHTML =
+      `<span class="agora-type agora-type-disc">DISC</span>` +
+      `<span class="agora-time">${time}</span> ` +
+      `<span class="agora-agent">${agent}</span> P${pid}` +
+      `<span class="agora-body">${body}</span>`;
+  } else {
+    // Governance event (endorse, reject, propose, amend)
+    const action = (entry.type || entry.action || 'GOV').toUpperCase().replace('GOVERNANCE_', '');
+    const agent = (entry.agent || entry.author || entry.sender || '').substring(0, 10);
+    const pid = entry.proposal_id || entry.proposalId || '';
+    div.innerHTML =
+      `<span class="agora-type agora-type-gov">${action}</span>` +
+      `<span class="agora-time">${time}</span> ` +
+      `<span class="agora-agent">${agent}</span>` +
+      (pid ? ` P${pid}` : '');
+  }
+
+  return div;
+}
+
+// ═══════════════════════════════════════════════════════════
+// GOVERNANCE PANEL
+// ═══════════════════════════════════════════════════════════
+
+function startGovPolling() {
+  loadProposals();
+  govPollTimer = setInterval(loadProposals, 15000);
+}
+
+async function loadProposals() {
+  try {
+    const resp = await fetch(`${API_BASE}/knowledge/proposals?status=all`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const proposals = data.proposals || data || [];
+
+    // Update GOV badge with pending count
+    const pending = proposals.filter(p => p.status === 'pending').length;
+    updateGovBadge(pending);
+
+    // Stats line
+    const statsEl = document.getElementById('gov-stats');
+    if (statsEl) {
+      statsEl.textContent = `TOTAL: ${proposals.length} | PENDING: ${pending}`;
+    }
+
+    const listEl = document.getElementById('proposal-list');
+    if (!listEl) return;
+
+    // Sort: pending first, then by ID desc
+    proposals.sort((a, b) => {
+      if (a.status === 'pending' && b.status !== 'pending') return -1;
+      if (b.status === 'pending' && a.status !== 'pending') return 1;
+      return (b.id || 0) - (a.id || 0);
+    });
+
+    listEl.innerHTML = '';
+    for (const p of proposals) {
+      listEl.appendChild(renderProposalCard(p));
+    }
+  } catch {
+    // Server unavailable
+  }
+}
+
+function renderProposalCard(p) {
+  const div = document.createElement('div');
+  div.className = 'proposal-item';
+  div.addEventListener('click', () => openProposalDetail(p.id));
+
+  const id = p.id || '?';
+  const name = (p.name || p.glyphId || 'Unnamed').substring(0, 16);
+  const type = p.type === 'base' ? 'BASE' : 'COMPOUND';
+  const proposer = (p.proposer || p.author || '').substring(0, 10);
+  const status = p.status || 'pending';
+  const endorsements = p.endorsements || 0;
+  const rejections = p.rejections || 0;
+  const threshold = p.threshold || 5;
+  const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
+  const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
+
+  // Time since creation
+  const age = p.created_at ? formatAge(p.created_at) : '';
+
+  div.innerHTML =
+    `<div class="proposal-header">` +
+      `<span class="proposal-id">P${String(id).padStart(3, '0')}</span> ` +
+      `<span class="proposal-name">${name}</span> ` +
+      `<span class="status-badge status-${status}">${status}</span>` +
+    `</div>` +
+    `<div class="proposal-meta">${type} by ${proposer}</div>` +
+    `<div class="vote-bar">` +
+      `<div class="vote-bar-endorse" style="width:${endorsePct}%"></div>` +
+      `<div class="vote-bar-reject" style="width:${rejectPct}%"></div>` +
+    `</div>` +
+    `<div class="vote-label">` +
+      `<span>${endorsements}/${threshold} endorse</span>` +
+      `<span>${age}</span>` +
+    `</div>`;
+
+  return div;
+}
+
+function formatAge(ts) {
+  const ms = Date.now() - new Date(ts).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d`;
+}
+
+function updateGovBadge(count) {
+  const badge = document.getElementById('gov-badge');
+  if (!badge) return;
+  if (count > 0) {
+    badge.textContent = count;
+    badge.classList.add('visible');
+  } else {
+    badge.classList.remove('visible');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PROPOSAL DETAIL
+// ═══════════════════════════════════════════════════════════
+
+async function openProposalDetail(id) {
+  openProposalId = id;
+  const detailEl = document.getElementById('proposal-detail');
+  const listEl = document.getElementById('proposal-list');
+  if (!detailEl || !listEl) return;
+
+  listEl.style.display = 'none';
+  detailEl.style.display = '';
+  detailEl.innerHTML = '<div style="color:var(--fg-muted);padding:8px;">Loading...</div>';
+
+  try {
+    const resp = await fetch(`${API_BASE}/governance/proposals/${id}/summary`);
+    if (!resp.ok) {
+      detailEl.innerHTML = '<div style="color:var(--color-error);padding:8px;">Failed to load</div>';
+      return;
+    }
+    const data = await resp.json();
+    renderProposalDetail(data);
+  } catch {
+    detailEl.innerHTML = '<div style="color:var(--color-error);padding:8px;">Server error</div>';
+  }
+}
+
+function closeProposalDetail() {
+  openProposalId = null;
+  const detailEl = document.getElementById('proposal-detail');
+  const listEl = document.getElementById('proposal-list');
+  if (detailEl) detailEl.style.display = 'none';
+  if (listEl) listEl.style.display = '';
+}
+
+function renderProposalDetail(data) {
+  const detailEl = document.getElementById('proposal-detail');
+  if (!detailEl) return;
+
+  const p = data.proposal || data;
+  const votes = data.votes || {};
+  const comments = data.comments || data.discussion || [];
+
+  const id = p.id || '?';
+  const name = p.name || p.glyphId || 'Unnamed';
+  const status = p.status || 'pending';
+  const type = p.type === 'base' ? 'BASE GLYPH' : 'COMPOUND';
+  const proposer = p.proposer || p.author || '?';
+  const description = p.description || p.rationale || '';
+  const endorsements = votes.endorsements ?? p.endorsements ?? 0;
+  const rejections = votes.rejections ?? p.rejections ?? 0;
+  const threshold = votes.threshold ?? p.threshold ?? 5;
+  const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
+  const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
+  const created = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+
+  let html =
+    `<button class="detail-close" id="detail-close-btn">X</button>` +
+    `<div class="detail-title">P${String(id).padStart(3, '0')} ${name}</div>` +
+    `<div class="detail-meta">` +
+      `${type} | <span class="status-badge status-${status}">${status}</span><br>` +
+      `Proposer: ${proposer}<br>` +
+      (created ? `Created: ${created}<br>` : '') +
+      (description ? `${description}` : '') +
+    `</div>` +
+    `<div class="detail-section-title">VOTES</div>` +
+    `<div class="vote-bar">` +
+      `<div class="vote-bar-endorse" style="width:${endorsePct}%"></div>` +
+      `<div class="vote-bar-reject" style="width:${rejectPct}%"></div>` +
+    `</div>` +
+    `<div class="vote-label">` +
+      `<span style="color:#00ff41">${endorsements} endorse</span>` +
+      `<span style="color:#ff006e">${rejections} reject</span>` +
+      `<span>need ${threshold}</span>` +
+    `</div>`;
+
+  if (comments.length > 0) {
+    html += `<div class="detail-section-title">DISCUSSION (${comments.length})</div>`;
+    for (const c of comments) {
+      const isReply = c.parent_id || c.parentId;
+      const author = (c.author || '').substring(0, 12);
+      const time = formatTime(c.created_at || Date.now());
+      const body = c.body || '';
+      html +=
+        `<div class="comment-entry${isReply ? ' comment-reply' : ''}">` +
+          `<span class="comment-author">${author}</span>` +
+          `<span class="comment-time">${time}</span>` +
+          `<div class="comment-body">${body}</div>` +
+        `</div>`;
+    }
+  } else {
+    html += `<div class="detail-section-title">DISCUSSION</div>` +
+            `<div style="color:var(--fg-muted);font-size:9px;padding:4px 0;">No comments yet</div>`;
+  }
+
+  detailEl.innerHTML = html;
+
+  document.getElementById('detail-close-btn')?.addEventListener('click', closeProposalDetail);
+}
+
+// ═══════════════════════════════════════════════════════════
+// GOVERNANCE EVENTS (WebSocket)
+// ═══════════════════════════════════════════════════════════
+
+async function fetchGovBadge() {
+  try {
+    const resp = await fetch(`${API_BASE}/knowledge/proposals?status=all`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const proposals = data.proposals || data || [];
+    const pending = proposals.filter(p => p.status === 'pending').length;
+    updateGovBadge(pending);
+  } catch { /* ignore */ }
+}
+
+function handleGovernanceEvent(msg) {
+  // Flash the canvas
+  const canvas = document.querySelector('.glyph-canvas-container');
+  if (canvas) {
+    const flashClass = (msg.type === 'governance_amend' || msg.type === 'governance_propose')
+      ? 'flash-gold' : 'flash-blue';
+    canvas.classList.add(flashClass);
+    setTimeout(() => canvas.classList.remove(flashClass), 800);
+  }
+
+  // Live-update agora feed if tab active
+  if (activeTab === 'agora' && currentMode === 'real') {
+    const feedEl = document.getElementById('agora-feed');
+    if (feedEl) {
+      const entry = renderAgoraEntry({
+        type: msg.type,
+        agent: msg.agent || msg.author || msg.sender,
+        proposal_id: msg.proposalId || msg.proposal_id,
+        body: msg.body,
+        timestamp: Date.now()
+      });
+      feedEl.prepend(entry);
+    }
+  }
+
+  // Refresh proposal detail if open for this proposal
+  if (activeTab === 'gov' && openProposalId &&
+      (msg.proposalId == openProposalId || msg.proposal_id == openProposalId)) {
+    openProposalDetail(openProposalId);
+  }
+}
+
 async function init() {
   debug('Starting...');
 
@@ -379,8 +792,13 @@ async function init() {
     modeEl.className = `mode-${currentMode}`;
   }
 
+  // Initialize tab switching
+  initTabs();
+
   if (currentMode === 'real') {
     startKnowledgePolling();
+    // Fetch pending proposal count for GOV badge
+    fetchGovBadge();
   }
 }
 

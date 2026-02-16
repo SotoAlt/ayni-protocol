@@ -624,11 +624,43 @@ export class MockWebSocket {
     console.log('runNextScenario called, isRunning:', this.isRunning);
     if (!this.isRunning) return;
 
+    // 10% chance to emit a mock governance event between scenarios
+    if (Math.random() < 0.1) {
+      this.emitMockGovernanceEvent();
+    }
+
     // Pick random scenario
     this.currentScenario = SCENARIOS[Math.floor(Math.random() * SCENARIOS.length)];
     console.log('Selected scenario:', this.currentScenario.name);
     this.stepIndex = 0;
     this.runNextStep();
+  }
+
+  /**
+   * Emit a mock governance event (comment or amend)
+   */
+  emitMockGovernanceEvent() {
+    const agents = ['GovAlice', 'GovBob', 'GovCarol', 'GovDave'];
+    const agent = agents[Math.floor(Math.random() * agents.length)];
+    const proposalId = Math.floor(Math.random() * 5) + 1;
+    const isComment = Math.random() > 0.3;
+
+    if (isComment) {
+      this.onMessage({
+        type: 'governance_comment',
+        agent,
+        proposalId,
+        body: 'Mock discussion comment for demo',
+        timestamp: Date.now()
+      });
+    } else {
+      this.onMessage({
+        type: 'governance_amend',
+        agent,
+        proposalId,
+        timestamp: Date.now()
+      });
+    }
   }
 
   /**

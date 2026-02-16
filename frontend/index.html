@@ -21,69 +21,97 @@
 
     <!-- Side Panel with Metadata -->
     <aside class="info-panel">
-      <div class="panel-header">> AYNI v2</div>
+      <div class="panel-tabs">
+        <button class="tab-btn active" data-tab="stream">STREAM</button>
+        <button class="tab-btn" data-tab="agora">AGORA</button>
+        <button class="tab-btn" data-tab="gov">GOV<span class="tab-badge" id="gov-badge"></span></button>
+      </div>
       <div id="debug-info" style="color:#ff0;font-size:10px;padding:4px;background:#111;margin-bottom:8px;">Loading...</div>
 
-      <div class="panel-section">
-        <div class="section-title">SEQUENCE</div>
-        <div id="glyph-sequence" class="glyph-sequence">
-          <span class="glyph-icons">--</span>
-          <span class="glyph-names">--</span>
+      <!-- STREAM TAB (existing content, unchanged) -->
+      <div class="tab-content active" data-tab="stream">
+        <div class="panel-section">
+          <div class="section-title">SEQUENCE</div>
+          <div id="glyph-sequence" class="glyph-sequence">
+            <span class="glyph-icons">--</span>
+            <span class="glyph-names">--</span>
+          </div>
         </div>
-      </div>
 
-      <div class="panel-section">
-        <div class="section-title">MEANING</div>
-        <pre id="message-meaning">--</pre>
-      </div>
+        <div class="panel-section">
+          <div class="section-title">MEANING</div>
+          <pre id="message-meaning">--</pre>
+        </div>
 
-      <div class="panel-divider"></div>
+        <div class="panel-divider"></div>
 
-      <div class="panel-section">
-        <div class="section-title">LATEST</div>
-        <pre id="message-info">FROM: --
+        <div class="panel-section">
+          <div class="section-title">LATEST</div>
+          <pre id="message-info">FROM: --
 TO:   --
 SIZE: --
 TIME: --
 ENC:  --</pre>
-      </div>
+        </div>
 
-      <div class="panel-divider"></div>
+        <div class="panel-divider"></div>
 
-      <div class="panel-section">
-        <div class="section-title">STATS</div>
-        <pre id="stats-info">MSGS:   0
+        <div class="panel-section">
+          <div class="section-title">STATS</div>
+          <pre id="stats-info">MSGS:   0
 GLYPHS: 0
 BYTES:  0B
 ROWS:   0</pre>
-      </div>
+        </div>
 
-      <div class="panel-divider"></div>
+        <div class="panel-divider"></div>
 
-      <div class="panel-section">
-        <div class="section-title">LEGEND</div>
-        <pre id="legend-info"><span class="color-humanoid">H</span> Humanoid <span class="color-creature">C</span> Creature
+        <div class="panel-section">
+          <div class="section-title">LEGEND</div>
+          <pre id="legend-info"><span class="color-humanoid">H</span> Humanoid <span class="color-creature">C</span> Creature
 <span class="color-machine">M</span> Machine  <span class="color-symbol">S</span> Symbol
 <span class="color-crypto">X</span> Crypto   <span class="color-agent">A</span> Agent</pre>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-section">
+          <div class="section-title">KNOWLEDGE</div>
+          <pre id="knowledge-stats" class="knowledge-stats">-- waiting for server --</pre>
+        </div>
+
+        <div class="panel-divider"></div>
+
+        <div class="panel-section panel-section-log">
+          <div class="section-title">MESSAGE LOG</div>
+          <div id="message-log" class="message-log"></div>
+        </div>
+
+        <div class="panel-controls">
+          <button class="term-btn" id="btn-pause">PAUSE</button>
+          <button class="term-btn" id="btn-clear">CLEAR</button>
+        </div>
       </div>
 
-      <div class="panel-divider"></div>
-
-      <div class="panel-section">
-        <div class="section-title">KNOWLEDGE</div>
-        <pre id="knowledge-stats" class="knowledge-stats">-- waiting for server --</pre>
+      <!-- AGORA TAB -->
+      <div class="tab-content" data-tab="agora">
+        <div class="panel-section">
+          <pre id="agora-stats" class="knowledge-stats">-- loading --</pre>
+        </div>
+        <div class="panel-divider"></div>
+        <div id="agora-feed" class="agora-feed"></div>
+        <div id="agora-demo" class="tab-demo" style="display:none;">DEMO MODE - No server</div>
       </div>
 
-      <div class="panel-divider"></div>
-
-      <div class="panel-section panel-section-log">
-        <div class="section-title">MESSAGE LOG</div>
-        <div id="message-log" class="message-log"></div>
-      </div>
-
-      <div class="panel-controls">
-        <button class="term-btn" id="btn-pause">PAUSE</button>
-        <button class="term-btn" id="btn-clear">CLEAR</button>
+      <!-- GOV TAB -->
+      <div class="tab-content" data-tab="gov">
+        <div class="panel-section">
+          <pre id="gov-stats" class="knowledge-stats">-- loading --</pre>
+        </div>
+        <div class="panel-divider"></div>
+        <div id="proposal-list" class="proposal-list"></div>
+        <div id="proposal-detail" class="proposal-detail" style="display:none;"></div>
+        <div id="gov-demo" class="tab-demo" style="display:none;">DEMO MODE - No server</div>
       </div>
     </aside>
   </main>

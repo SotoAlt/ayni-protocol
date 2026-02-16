@@ -329,6 +329,356 @@ body {
 .color-state { color: var(--color-state); }
 
 /* ============================================
+   TAB BAR
+   ============================================ */
+.panel-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  margin-bottom: 8px;
+}
+
+.tab-btn {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 6px 4px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tab-btn:hover {
+  color: var(--fg-dim);
+}
+
+.tab-btn.active {
+  color: var(--fg);
+  border-bottom-color: var(--fg);
+}
+
+.tab-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 8px;
+  font-weight: 700;
+  min-width: 12px;
+  height: 12px;
+  line-height: 12px;
+  text-align: center;
+  border-radius: 6px;
+  background: var(--color-crypto);
+  color: #000;
+  display: none;
+}
+
+.tab-badge.visible {
+  display: inline-block;
+}
+
+/* Tab content show/hide */
+.tab-content {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: flex;
+}
+
+/* ============================================
+   AGORA FEED
+   ============================================ */
+.agora-feed {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 10px;
+  line-height: 1.5;
+  min-height: 60px;
+}
+
+.agora-feed::-webkit-scrollbar {
+  width: 4px;
+}
+
+.agora-feed::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+.agora-feed::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.agora-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid #111;
+}
+
+.agora-entry .agora-type {
+  font-weight: 700;
+  font-size: 9px;
+  margin-right: 4px;
+}
+
+.agora-entry .agora-time {
+  color: var(--fg-muted);
+  font-size: 9px;
+}
+
+.agora-entry .agora-agent {
+  color: var(--fg-dim);
+}
+
+.agora-entry .agora-body {
+  color: var(--fg-muted);
+  font-style: italic;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agora-type-msg { color: var(--fg-dim); }
+.agora-type-gov { color: var(--color-crypto); }
+.agora-type-disc { color: var(--color-agent); }
+
+/* ============================================
+   PROPOSAL LIST & CARDS
+   ============================================ */
+.proposal-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 60px;
+}
+
+.proposal-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.proposal-list::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+.proposal-list::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.proposal-item {
+  padding: 6px 4px;
+  border-bottom: 1px solid #111;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.proposal-item:hover {
+  background: #111;
+}
+
+.proposal-item .proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+}
+
+.proposal-item .proposal-id {
+  font-weight: 700;
+  font-size: 10px;
+  color: var(--fg);
+}
+
+.proposal-item .proposal-name {
+  font-size: 10px;
+  color: var(--fg-dim);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.proposal-item .proposal-meta {
+  font-size: 9px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+}
+
+.status-badge {
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pending { background: #f5a623; color: #000; }
+.status-accepted { background: #00ff41; color: #000; }
+.status-ratified { background: #00ff41; color: #000; }
+.status-rejected { background: #ff006e; color: #000; }
+.status-expired { background: #555; color: #ccc; }
+.status-superseded { background: #4a9eff; color: #000; }
+
+/* Vote progress bar */
+.vote-bar {
+  height: 4px;
+  background: #1a1a1a;
+  border-radius: 2px;
+  margin-top: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.vote-bar-endorse {
+  background: #00ff41;
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.vote-bar-reject {
+  background: #ff006e;
+  height: 100%;
+  transition: width 0.3s;
+}
+
+.vote-label {
+  font-size: 9px;
+  color: var(--fg-muted);
+  margin-top: 2px;
+  display: flex;
+  justify-content: space-between;
+}
+
+/* ============================================
+   PROPOSAL DETAIL PANEL
+   ============================================ */
+.proposal-detail {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  font-size: 10px;
+}
+
+.proposal-detail::-webkit-scrollbar {
+  width: 4px;
+}
+
+.proposal-detail::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+.proposal-detail::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+.detail-close {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg-dim);
+  cursor: pointer;
+  padding: 2px 8px;
+  float: right;
+}
+
+.detail-close:hover {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.detail-title {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+
+.detail-meta {
+  font-size: 9px;
+  color: var(--fg-muted);
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.detail-section-title {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--fg-dim);
+  letter-spacing: 0.1em;
+  margin: 8px 0 4px;
+}
+
+/* Discussion thread */
+.comment-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid #111;
+}
+
+.comment-entry.comment-reply {
+  margin-left: 12px;
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+}
+
+.comment-author {
+  font-weight: 700;
+  color: var(--color-agent);
+  font-size: 9px;
+}
+
+.comment-time {
+  color: var(--fg-muted);
+  font-size: 8px;
+  margin-left: 4px;
+}
+
+.comment-body {
+  color: var(--fg-dim);
+  font-size: 10px;
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+/* Demo mode placeholder */
+.tab-demo {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-muted);
+  font-size: 11px;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Canvas governance flash */
+.glyph-canvas-container.flash-gold {
+  box-shadow: inset 0 0 30px rgba(245, 166, 35, 0.15);
+  transition: box-shadow 0.2s ease-in;
+}
+
+.glyph-canvas-container.flash-blue {
+  box-shadow: inset 0 0 30px rgba(74, 158, 255, 0.15);
+  transition: box-shadow 0.2s ease-in;
+}
+
+/* ============================================
    RESPONSIVE
    ============================================ */
 @media (max-width: 600px) {
