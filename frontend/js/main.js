@@ -510,7 +510,7 @@ async function loadProposals() {
     proposals.sort((a, b) => {
       if (a.status === 'pending' && b.status !== 'pending') return -1;
       if (b.status === 'pending' && a.status !== 'pending') return 1;
-      return (b.id || 0) - (a.id || 0);
+      return String(b.id || '').localeCompare(String(a.id || ''));
     });
 
     listEl.innerHTML = '';
@@ -532,18 +532,22 @@ function renderProposalCard(p) {
   const type = p.type === 'base' ? 'BASE' : 'COMPOUND';
   const proposer = (p.proposer || p.author || '').substring(0, 10);
   const status = p.status || 'pending';
-  const endorsements = p.endorsements || 0;
-  const rejections = p.rejections || 0;
-  const threshold = p.threshold || 5;
+  const endorsements = Array.isArray(p.endorsers) ? p.endorsers.length : (p.endorsements || 0);
+  const rejections = Array.isArray(p.rejectors) ? p.rejectors.length : (p.rejections || 0);
+  const threshold = p.threshold || 3;
   const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
   const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
 
-  // Time since creation
-  const age = p.created_at ? formatAge(p.created_at) : '';
+  // Time since creation (server uses createdAt or created_at)
+  const createdTs = p.createdAt || p.created_at;
+  const age = createdTs ? formatAge(createdTs) : '';
+
+  // ID might already be "P001" format
+  const displayId = String(id).startsWith('P') ? id : `P${String(id).padStart(3, '0')}`;
 
   div.innerHTML =
     `<div class="proposal-header">` +
-      `<span class="proposal-id">P${String(id).padStart(3, '0')}</span> ` +
+      `<span class="proposal-id">${displayId}</span> ` +
       `<span class="proposal-name">${name}</span> ` +
       `<span class="status-badge status-${status}">${status}</span>` +
     `</div>` +
@@ -621,7 +625,7 @@ function renderProposalDetail(data) {
   if (!detailEl) return;
 
   const p = data.proposal || data;
-  const votes = data.votes || {};
+  const votes = data.voteStatus || data.votes || {};
   const comments = data.comments || data.discussion || [];
 
   const id = p.id || '?';
@@ -630,16 +634,19 @@ function renderProposalDetail(data) {
   const type = p.type === 'base' ? 'BASE GLYPH' : 'COMPOUND';
   const proposer = p.proposer || p.author || '?';
   const description = p.description || p.rationale || '';
-  const endorsements = votes.endorsements ?? p.endorsements ?? 0;
-  const rejections = votes.rejections ?? p.rejections ?? 0;
-  const threshold = votes.threshold ?? p.threshold ?? 5;
+  const endorsements = votes.endorsements ?? (Array.isArray(p.endorsers) ? p.endorsers.length : 0);
+  const rejections = votes.rejections ?? (Array.isArray(p.rejectors) ? p.rejectors.length : 0);
+  const threshold = votes.threshold ?? p.threshold ?? 3;
   const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
   const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
-  const created = p.created_at ? new Date(p.created_at).toLocaleString() : '';
+  const createdTs = p.createdAt || p.created_at;
+  const created = createdTs ? new Date(createdTs).toLocaleString() : '';
+
+  const displayId = String(id).startsWith('P') ? id : `P${String(id).padStart(3, '0')}`;
 
   let html =
     `<button class="detail-close" id="detail-close-btn">X</button>` +
-    `<div class="detail-title">P${String(id).padStart(3, '0')} ${name}</div>` +
+    `<div class="detail-title">${displayId} ${name}</div>` +
     `<div class="detail-meta">` +
       `${type} | <span class="status-badge status-${status}">${status}</span><br>` +
       `Proposer: ${proposer}<br>` +
