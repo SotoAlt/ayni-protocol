@@ -96,7 +96,7 @@ async function relayToRecipient(endpoint: string, message: object): Promise<{ su
 
 export const sendRoute: FastifyPluginAsync = async (fastify) => {
   fastify.post<{ Body: SendBody }>('/send', {
-    config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    config: { rateLimit: { max: 120, timeWindow: '1 minute' } },
     schema: {
       body: {
         type: 'object',
