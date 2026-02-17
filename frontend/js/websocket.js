@@ -735,16 +735,13 @@ export class MockWebSocket {
    * Get category from glyph ID
    */
   getCategoryFromGlyph(glyphId) {
-    // Check new glyph categories
     for (const [category, glyphs] of Object.entries(GLYPH_CATEGORIES)) {
       if (glyphs.includes(glyphId)) {
         return category;
       }
     }
 
-    // Fallback for legacy glyph IDs
-    const prefix = glyphId[0];
-    const categories = {
+    const LEGACY_CATEGORIES = {
       'Q': 'query',
       'R': 'response',
       'E': 'error',
@@ -752,7 +749,8 @@ export class MockWebSocket {
       'S': 'state',
       'P': 'payment'
     };
-    return categories[prefix] || 'symbol';
+
+    return LEGACY_CATEGORIES[glyphId[0]] || 'symbol';
   }
 
   /**

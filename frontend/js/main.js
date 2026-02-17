@@ -185,28 +185,37 @@ function addLogEntry(msg, prepend = true) {
 }
 
 function handleMessage(msg) {
-  // Route governance events before glyph processing
-  if (msg.type === 'governance_comment' || msg.type === 'governance_amend' ||
-      msg.type === 'governance_endorse' || msg.type === 'governance_reject' ||
-      msg.type === 'governance_propose') {
+  if (isGovernanceEvent(msg.type)) {
     handleGovernanceEvent(msg);
     return;
   }
 
-  // Normalize: server WebSocket sends {glyph:'Q01', sender, recipient}
-  // Mock sends {glyphs:['asking','database'], glyphId:'Q01', from, to}
-  if (!msg.glyphId && msg.glyph && GLYPH_VISUAL[msg.glyph]) {
-    // Real server message — set glyphId + visual info
-    const visual = getVisual(msg.glyph);
-    msg.glyphId = msg.glyph;
-    msg.glyphs = msg.glyphs || visual.glyphs;
-    msg.category = msg.category || visual.category;
-    msg.meaning = msg.meaning || visual.meaning;
-    msg.from = msg.from || msg.sender;
-    msg.to = msg.to || msg.recipient;
-  }
+  normalizeMessage(msg);
   stream.addMessage(msg);
   addLogEntry(msg);
+}
+
+function isGovernanceEvent(type) {
+  const GOVERNANCE_EVENTS = [
+    'governance_comment',
+    'governance_amend',
+    'governance_endorse',
+    'governance_reject',
+    'governance_propose'
+  ];
+  return GOVERNANCE_EVENTS.includes(type);
+}
+
+function normalizeMessage(msg) {
+  if (msg.glyphId || !msg.glyph || !GLYPH_VISUAL[msg.glyph]) return;
+
+  const visual = getVisual(msg.glyph);
+  msg.glyphId = msg.glyph;
+  msg.glyphs = msg.glyphs || visual.glyphs;
+  msg.category = msg.category || visual.category;
+  msg.meaning = msg.meaning || visual.meaning;
+  msg.from = msg.from || msg.sender;
+  msg.to = msg.to || msg.recipient;
 }
 
 let historyCounter = 0;
@@ -353,50 +362,86 @@ function initTabs() {
       activeTab = tab;
 
       // Lazy-load + start polling for new tab
-      if (tab === 'agora') {
-        if (currentMode === 'mock') {
-          document.getElementById('agora-demo').style.display = 'flex';
-          document.getElementById('agora-feed').style.display = 'none';
-          const s = document.getElementById('agora-stats');
-          if (s) s.textContent = 'DEMO MODE';
-        } else {
-          document.getElementById('agora-demo').style.display = 'none';
-          document.getElementById('agora-feed').style.display = '';
-          if (!agoraLoaded) { loadAgoraFeed(); agoraLoaded = true; }
-          startAgoraPolling();
-        }
-      } else if (tab === 'gov') {
-        if (currentMode === 'mock') {
-          document.getElementById('gov-demo').style.display = 'flex';
-          document.getElementById('proposal-list').style.display = 'none';
-          const s = document.getElementById('gov-stats');
-          if (s) s.textContent = 'DEMO MODE';
-        } else {
-          document.getElementById('gov-demo').style.display = 'none';
-          document.getElementById('proposal-list').style.display = '';
-          if (!govLoaded) { loadProposals(); govLoaded = true; }
-          startGovPolling();
-        }
-      } else if (tab === 'stream' && currentMode === 'real') {
-        startKnowledgePolling();
+      switch (tab) {
+        case 'agora':
+          if (currentMode === 'mock') {
+            showDemoMode('agora');
+          } else {
+            hideDemoMode('agora');
+            if (!agoraLoaded) {
+              loadAgoraFeed();
+              agoraLoaded = true;
+            }
+            startAgoraPolling();
+          }
+          break;
+
+        case 'gov':
+          if (currentMode === 'mock') {
+            showDemoMode('gov');
+          } else {
+            hideDemoMode('gov');
+            if (!govLoaded) {
+              loadProposals();
+              govLoaded = true;
+            }
+            startGovPolling();
+          }
+          break;
+
+        case 'stream':
+          if (currentMode === 'real') {
+            startKnowledgePolling();
+          }
+          break;
       }
     });
   });
 }
 
 function stopTabPolling(tab) {
-  if (tab === 'agora' && agoraPollTimer) {
-    clearInterval(agoraPollTimer);
-    agoraPollTimer = null;
+  switch (tab) {
+    case 'agora':
+      if (agoraPollTimer) {
+        clearInterval(agoraPollTimer);
+        agoraPollTimer = null;
+      }
+      break;
+
+    case 'gov':
+      if (govPollTimer) {
+        clearInterval(govPollTimer);
+        govPollTimer = null;
+      }
+      break;
+
+    case 'stream':
+      if (knowledgePollTimer) {
+        clearInterval(knowledgePollTimer);
+        knowledgePollTimer = null;
+      }
+      break;
   }
-  if (tab === 'gov' && govPollTimer) {
-    clearInterval(govPollTimer);
-    govPollTimer = null;
-  }
-  if (tab === 'stream' && knowledgePollTimer) {
-    clearInterval(knowledgePollTimer);
-    knowledgePollTimer = null;
-  }
+}
+
+function showDemoMode(tab) {
+  const demoEl = document.getElementById(`${tab}-demo`);
+  const contentId = tab === 'agora' ? 'agora-feed' : 'proposal-list';
+  const contentEl = document.getElementById(contentId);
+  const statsEl = document.getElementById(`${tab}-stats`);
+
+  if (demoEl) demoEl.style.display = 'flex';
+  if (contentEl) contentEl.style.display = 'none';
+  if (statsEl) statsEl.textContent = 'DEMO MODE';
+}
+
+function hideDemoMode(tab) {
+  const demoEl = document.getElementById(`${tab}-demo`);
+  const contentId = tab === 'agora' ? 'agora-feed' : 'proposal-list';
+  const contentEl = document.getElementById(contentId);
+
+  if (demoEl) demoEl.style.display = 'none';
+  if (contentEl) contentEl.style.display = '';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -444,8 +489,9 @@ function renderAgoraEntry(entry) {
   div.className = 'agora-entry';
 
   const time = formatTime(entry.timestamp || entry.created_at || Date.now());
+  const type = entry.type || '';
 
-  if (entry.type === 'message' || entry.glyph) {
+  if (type === 'message' || entry.glyph) {
     const glyph = entry.glyph || '?';
     const agent = (entry.sender || entry.from || '').substring(0, 10);
     div.innerHTML =
@@ -453,7 +499,7 @@ function renderAgoraEntry(entry) {
       `<span class="agora-time">${time}</span> ` +
       `<span class="agora-agent">${agent}</span> ` +
       `<span class="log-glyph glyph-foundation">${glyph}</span>`;
-  } else if (entry.type === 'discussion' || entry.type === 'comment') {
+  } else if (type === 'discussion' || type === 'comment') {
     const agent = (entry.author || entry.agent || '').substring(0, 10);
     const body = (entry.body || '').substring(0, 60);
     const pid = entry.proposal_id || entry.proposalId || '?';
@@ -463,8 +509,7 @@ function renderAgoraEntry(entry) {
       `<span class="agora-agent">${agent}</span> P${pid}` +
       `<span class="agora-body">${body}</span>`;
   } else {
-    // Governance event (endorse, reject, propose, amend)
-    const action = (entry.type || entry.action || 'GOV').toUpperCase().replace('GOVERNANCE_', '');
+    const action = (type || entry.action || 'GOV').toUpperCase().replace('GOVERNANCE_', '');
     const agent = (entry.agent || entry.author || entry.sender || '').substring(0, 10);
     const pid = entry.proposal_id || entry.proposalId || '';
     div.innerHTML =
@@ -532,18 +577,18 @@ function renderProposalCard(p) {
   const type = p.type === 'base' ? 'BASE' : 'COMPOUND';
   const proposer = (p.proposer || p.author || '').substring(0, 10);
   const status = p.status || 'pending';
+
   const endorsements = Array.isArray(p.endorsers) ? p.endorsers.length : (p.endorsements || 0);
   const rejections = Array.isArray(p.rejectors) ? p.rejectors.length : (p.rejections || 0);
   const threshold = p.threshold || 3;
-  const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
-  const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
 
-  // Time since creation (server uses createdAt or created_at)
+  const endorsePct = calculatePercentage(endorsements, threshold);
+  const rejectPct = calculatePercentage(rejections, threshold);
+
   const createdTs = p.createdAt || p.created_at;
   const age = createdTs ? formatAge(createdTs) : '';
 
-  // ID might already be "P001" format
-  const displayId = String(id).startsWith('P') ? id : `P${String(id).padStart(3, '0')}`;
+  const displayId = formatProposalId(id);
 
   div.innerHTML =
     `<div class="proposal-header">` +
@@ -562,6 +607,16 @@ function renderProposalCard(p) {
     `</div>`;
 
   return div;
+}
+
+function calculatePercentage(count, threshold) {
+  if (threshold <= 0) return 0;
+  return Math.min((count / threshold) * 100, 100);
+}
+
+function formatProposalId(id) {
+  const idStr = String(id);
+  return idStr.startsWith('P') ? idStr : `P${idStr.padStart(3, '0')}`;
 }
 
 function formatAge(ts) {
@@ -634,15 +689,17 @@ function renderProposalDetail(data) {
   const type = p.type === 'base' ? 'BASE GLYPH' : 'COMPOUND';
   const proposer = p.proposer || p.author || '?';
   const description = p.description || p.rationale || '';
+
   const endorsements = votes.endorsements ?? (Array.isArray(p.endorsers) ? p.endorsers.length : 0);
   const rejections = votes.rejections ?? (Array.isArray(p.rejectors) ? p.rejectors.length : 0);
   const threshold = votes.threshold ?? p.threshold ?? 3;
-  const endorsePct = threshold > 0 ? Math.min((endorsements / threshold) * 100, 100) : 0;
-  const rejectPct = threshold > 0 ? Math.min((rejections / threshold) * 100, 100) : 0;
+
+  const endorsePct = calculatePercentage(endorsements, threshold);
+  const rejectPct = calculatePercentage(rejections, threshold);
+
   const createdTs = p.createdAt || p.created_at;
   const created = createdTs ? new Date(createdTs).toLocaleString() : '';
-
-  const displayId = String(id).startsWith('P') ? id : `P${String(id).padStart(3, '0')}`;
+  const displayId = formatProposalId(id);
 
   let html =
     `<button class="detail-close" id="detail-close-btn">X</button>` +
@@ -664,28 +721,32 @@ function renderProposalDetail(data) {
       `<span>need ${threshold}</span>` +
     `</div>`;
 
-  if (comments.length > 0) {
-    html += `<div class="detail-section-title">DISCUSSION (${comments.length})</div>`;
-    for (const c of comments) {
-      const isReply = c.parent_id || c.parentId;
-      const author = (c.author || '').substring(0, 12);
-      const time = formatTime(c.created_at || Date.now());
-      const body = c.body || '';
-      html +=
-        `<div class="comment-entry${isReply ? ' comment-reply' : ''}">` +
-          `<span class="comment-author">${author}</span>` +
-          `<span class="comment-time">${time}</span>` +
-          `<div class="comment-body">${body}</div>` +
-        `</div>`;
-    }
-  } else {
-    html += `<div class="detail-section-title">DISCUSSION</div>` +
-            `<div style="color:var(--fg-muted);font-size:9px;padding:4px 0;">No comments yet</div>`;
-  }
+  html += renderDiscussionSection(comments);
 
   detailEl.innerHTML = html;
-
   document.getElementById('detail-close-btn')?.addEventListener('click', closeProposalDetail);
+}
+
+function renderDiscussionSection(comments) {
+  if (comments.length === 0) {
+    return `<div class="detail-section-title">DISCUSSION</div>` +
+           `<div style="color:var(--fg-muted);font-size:9px;padding:4px 0;">No comments yet</div>`;
+  }
+
+  let html = `<div class="detail-section-title">DISCUSSION (${comments.length})</div>`;
+  for (const c of comments) {
+    const isReply = c.parent_id || c.parentId;
+    const author = (c.author || '').substring(0, 12);
+    const time = formatTime(c.created_at || Date.now());
+    const body = c.body || '';
+    html +=
+      `<div class="comment-entry${isReply ? ' comment-reply' : ''}">` +
+        `<span class="comment-author">${author}</span>` +
+        `<span class="comment-time">${time}</span>` +
+        `<div class="comment-body">${body}</div>` +
+      `</div>`;
+  }
+  return html;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -704,33 +765,44 @@ async function fetchGovBadge() {
 }
 
 function handleGovernanceEvent(msg) {
-  // Flash the canvas
+  flashCanvasForGovernance(msg.type);
+  updateAgoraFeedIfActive(msg);
+  refreshProposalIfOpen(msg);
+}
+
+function flashCanvasForGovernance(eventType) {
   const canvas = document.querySelector('.glyph-canvas-container');
-  if (canvas) {
-    const flashClass = (msg.type === 'governance_amend' || msg.type === 'governance_propose')
-      ? 'flash-gold' : 'flash-blue';
-    canvas.classList.add(flashClass);
-    setTimeout(() => canvas.classList.remove(flashClass), 800);
-  }
+  if (!canvas) return;
 
-  // Live-update agora feed if tab active
-  if (activeTab === 'agora' && currentMode === 'real') {
-    const feedEl = document.getElementById('agora-feed');
-    if (feedEl) {
-      const entry = renderAgoraEntry({
-        type: msg.type,
-        agent: msg.agent || msg.author || msg.sender,
-        proposal_id: msg.proposalId || msg.proposal_id,
-        body: msg.body,
-        timestamp: Date.now()
-      });
-      feedEl.prepend(entry);
-    }
-  }
+  const flashClass = (eventType === 'governance_amend' || eventType === 'governance_propose')
+    ? 'flash-gold'
+    : 'flash-blue';
 
-  // Refresh proposal detail if open for this proposal
-  if (activeTab === 'gov' && openProposalId &&
-      (msg.proposalId == openProposalId || msg.proposal_id == openProposalId)) {
+  canvas.classList.add(flashClass);
+  setTimeout(() => canvas.classList.remove(flashClass), 800);
+}
+
+function updateAgoraFeedIfActive(msg) {
+  if (activeTab !== 'agora' || currentMode !== 'real') return;
+
+  const feedEl = document.getElementById('agora-feed');
+  if (!feedEl) return;
+
+  const entry = renderAgoraEntry({
+    type: msg.type,
+    agent: msg.agent || msg.author || msg.sender,
+    proposal_id: msg.proposalId || msg.proposal_id,
+    body: msg.body,
+    timestamp: Date.now()
+  });
+  feedEl.prepend(entry);
+}
+
+function refreshProposalIfOpen(msg) {
+  if (activeTab !== 'gov' || !openProposalId) return;
+
+  const msgProposalId = msg.proposalId || msg.proposal_id;
+  if (msgProposalId == openProposalId) {
     openProposalDetail(openProposalId);
   }
 }
@@ -753,28 +825,31 @@ async function init() {
   console.log(`[Main] Requested mode: ${requestedMode}`);
 
   try {
-    if (requestedMode === 'mock') {
-      // Force mock mode
-      ws = createMockWebSocket();
-      ws.connect();
-    } else if (requestedMode === 'real') {
-      // Force real mode (no fallback)
-      ws = new RealWebSocket({
-        serverUrl: SERVER_URL,
-        onMessage: msg => handleMessage(msg),
-        onConnect: () => { debug('LIVE - Server connected'); fetchHistory(); },
-        onDisconnect: () => debug('LIVE - Disconnected'),
-        onError: (err) => debug('LIVE - Error: ' + err)
-      });
-      ws.connect();
-      currentMode = 'real';
-    } else {
-      // Auto mode: try real, fall back to mock
-      ws = await connectWithFallback();
-      if (!ws) {
+    switch (requestedMode) {
+      case 'mock':
         ws = createMockWebSocket();
         ws.connect();
-      }
+        break;
+
+      case 'real':
+        ws = new RealWebSocket({
+          serverUrl: SERVER_URL,
+          onMessage: msg => handleMessage(msg),
+          onConnect: () => { debug('LIVE - Server connected'); fetchHistory(); },
+          onDisconnect: () => debug('LIVE - Disconnected'),
+          onError: (err) => debug('LIVE - Error: ' + err)
+        });
+        ws.connect();
+        currentMode = 'real';
+        break;
+
+      default:
+        ws = await connectWithFallback();
+        if (!ws) {
+          ws = createMockWebSocket();
+          ws.connect();
+        }
+        break;
     }
   } catch (e) {
     debug('WS error: ' + e.message);
