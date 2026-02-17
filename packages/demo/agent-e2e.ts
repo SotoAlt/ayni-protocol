@@ -9,10 +9,14 @@
  *   3. Knowledge recall & query
  *   4. Governance: propose → endorse → accept compound glyph
  *   5. Error handling & edge cases
+ *   6. Agent registration & Agora communication
+ *   7. Base glyph proposal with discussion forum
+ *   8. Deferred voting + proposal amendment
+ *   9. Governance error cases + stats
  *
  * Usage:
  *   npx tsx packages/demo/agent-e2e.ts [SERVER_URL]
- *   npx tsx packages/demo/agent-e2e.ts https://ayni.waweapps.win
+ *   npx tsx packages/demo/agent-e2e.ts https://ay-ni.org
  */
 
 // ---------------------------------------------------------------------------
@@ -298,33 +302,41 @@ async function scenario4() {
     assert(body.status === 'pending', `Expected still pending, got ${body.status}`);
   });
 
-  await test('Carol endorses → hits threshold (3/3), proposal accepted', async () => {
+  await test('Carol endorses → hits threshold (3/3)', async () => {
     const { body } = await json('/knowledge/endorse', {
       method: 'POST',
       body: JSON.stringify({ proposalId, agent: 'Carol' }),
     });
     assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
     assert(body.endorsers === 3, `Expected 3 endorsers, got ${body.endorsers}`);
-    assert(body.status === 'accepted', `Expected accepted, got ${body.status}`);
-    assert(body.newCompound !== null, 'Should have created compound glyph');
-    console.log(`      Compound ID: ${body.newCompound?.id}, Name: ${body.newCompound?.name}`);
+    // On production (with MIN_VOTE_WINDOW_MS > 0), acceptance is deferred
+    // On local (MIN_VOTE_WINDOW_MS=0), it may accept immediately
+    assert(
+      body.status === 'accepted' || body.status === 'pending',
+      `Expected accepted or pending (deferred), got ${body.status}`
+    );
+    if (body.status === 'accepted') {
+      assert(body.newCompound !== null, 'Should have created compound glyph');
+      console.log(`      Compound ID: ${body.newCompound?.id}, Name: ${body.newCompound?.name}`);
+    } else {
+      console.log(`      Deferred: 3 endorsers, waiting for vote window`);
+    }
   });
 
-  await test('Dave endorsing already-accepted proposal is no-op', async () => {
+  await test('Dave also endorses (4th endorser)', async () => {
     const { body } = await json('/knowledge/endorse', {
       method: 'POST',
       body: JSON.stringify({ proposalId, agent: 'Dave' }),
     });
-    assert(body.success === true, 'Should still succeed (idempotent)');
-    assert(body.status === 'accepted', 'Should remain accepted');
-    assert(body.newCompound === null, 'Should not create duplicate compound');
+    assert(body.success === true, 'Should succeed');
+    assert(body.endorsers >= 3, `Expected ≥3 endorsers, got ${body.endorsers}`);
   });
 
-  await test('GET /knowledge/proposals shows accepted proposal', async () => {
-    const { body: proposals } = await json('/knowledge/proposals?status=accepted');
+  await test('GET /knowledge/proposals shows proposal with endorsers', async () => {
+    const { body: proposals } = await json('/knowledge/proposals');
     const found = proposals.find((p: any) => p.id === proposalId);
-    assert(found, `Proposal ${proposalId} should be in accepted list`);
-    assert(found.endorsers.length === 3, `Expected 3 endorsers, got ${found.endorsers.length}`);
+    assert(found, `Proposal ${proposalId} should be in proposals list`);
+    assert(found.endorsers.length >= 3, `Expected ≥3 endorsers, got ${found.endorsers.length}`);
   });
 
   await test('GET /knowledge/compounds includes "TaskAck"', async () => {
@@ -419,6 +431,365 @@ async function scenario5() {
 }
 
 // ---------------------------------------------------------------------------
+// Scenario 6 — Agent Registration & Agora Communication
+// ---------------------------------------------------------------------------
+
+async function scenario6() {
+  currentScenario = 'Agent Registration & Agora';
+  console.log('\n  ── Scenario 6: Agent Registration & Agora Communication ──');
+
+  const testTag = `gov-e2e-${Date.now()}`;
+  const agents = ['GovAlice', 'GovBob', 'GovCarol', 'GovDave'];
+
+  for (const name of agents) {
+    await test(`Register agent "${name}"`, async () => {
+      const { status, body } = await json('/agents/register', {
+        method: 'POST',
+        body: JSON.stringify({ name }),
+      });
+      assert(status === 200, `Expected 200, got ${status}`);
+      assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
+      assert(body.agent?.tier === 'unverified', `Expected tier=unverified, got ${body.agent?.tier}`);
+    });
+  }
+
+  await test('GovAlice sends Q01 to agora', async () => {
+    const { status, body } = await json('/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        glyph: 'Q01', sender: 'GovAlice', recipient: 'agora',
+        data: { about: 'governance test', tag: testTag },
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true`);
+  });
+
+  await test('GovBob sends R01 to agora', async () => {
+    const { status, body } = await json('/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        glyph: 'R01', sender: 'GovBob', recipient: 'agora',
+        data: { status: 'ready', tag: testTag },
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true`);
+  });
+
+  await sleep(300);
+
+  await test('GET /agora/messages returns our messages', async () => {
+    const { body } = await json('/agora/messages?limit=50');
+    assert(Array.isArray(body.messages), 'Should return messages array');
+    const ours = body.messages.filter((m: any) => m.data?.tag === testTag);
+    assert(ours.length >= 2, `Expected ≥2 tagged messages, got ${ours.length}`);
+  });
+
+  await test('GET /agora/feed returns mixed feed', async () => {
+    const { body } = await json('/agora/feed?limit=50');
+    assert(Array.isArray(body.items), 'Should return items array');
+    assert(body.items.length >= 1, 'Feed should have items');
+  });
+
+  await test('GET /agora/stats returns statistics', async () => {
+    const { body } = await json('/agora/stats');
+    assert(typeof body.totalMessages === 'number', 'Should have totalMessages');
+    assert(body.totalMessages >= 2, `Expected ≥2 messages, got ${body.totalMessages}`);
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 7 — Base Glyph Proposal with Discussion
+// ---------------------------------------------------------------------------
+
+// Shared state for scenarios 7-8
+let baseProposalId = '';
+let commentIds: number[] = [];
+
+async function scenario7() {
+  currentScenario = 'Base Glyph Proposal + Discussion';
+  console.log('\n  ── Scenario 7: Base Glyph Proposal with Discussion ──');
+
+  const glyphDesign = [
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0],
+    [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
+    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
+    [0,0,1,0,0,0,1,1,1,1,0,0,0,1,0,0],
+    [0,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0],
+    [0,1,0,0,0,1,1,0,0,1,1,0,0,0,1,0],
+    [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
+    [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
+    [0,1,0,0,0,1,1,0,0,1,1,0,0,0,1,0],
+    [0,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0],
+    [0,0,1,0,0,0,1,1,1,1,0,0,0,1,0,0],
+    [0,0,0,1,0,0,0,1,1,0,0,0,1,0,0,0],
+    [0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,0],
+    [0,0,0,0,0,1,0,0,0,0,1,0,0,0,0,0],
+    [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+  ];
+
+  await test('GovAlice proposes base glyph "Summarize" with design', async () => {
+    const { status, body } = await json('/knowledge/propose/base-glyph', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Summarize',
+        domain: 'agent',
+        keywords: ['summarize', 'summary', 'condense', 'tldr'],
+        meaning: 'Summarize Content',
+        description: 'Request content summarization or provide a summary',
+        proposer: 'GovAlice',
+        glyphDesign,
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
+    assert(body.proposal?.status === 'pending', `Expected pending, got ${body.proposal?.status}`);
+    assert(body.proposal?.minVoteAt > Date.now(), 'minVoteAt should be in the future');
+    assert(body.proposal?.glyphDesign != null, 'Should return glyphDesign');
+    baseProposalId = body.proposal.id;
+    console.log(`      Proposal ID: ${baseProposalId}`);
+  });
+
+  await test('Empty discussion for new proposal', async () => {
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/discussion`);
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.total === 0, `Expected 0 comments, got ${body.total}`);
+    assert(Array.isArray(body.comments) && body.comments.length === 0, 'Comments should be empty array');
+  });
+
+  await test('GovAlice starts discussion', async () => {
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({
+        author: 'GovAlice',
+        body: 'I propose Summarize because agents frequently need to condense information.',
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true`);
+    assert(typeof body.comment?.id === 'number', 'Should return comment with numeric id');
+    commentIds.push(body.comment.id);
+  });
+
+  await test('GovBob replies to GovAlice (threaded)', async () => {
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({
+        author: 'GovBob',
+        body: 'Should keywords include "tldr"? That seems useful for chat agents.',
+        parentId: commentIds[0],
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true`);
+    assert(body.comment?.parentId === commentIds[0], `parentId should match ${commentIds[0]}`);
+    commentIds.push(body.comment.id);
+  });
+
+  await test('GovCarol comments (top-level)', async () => {
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({
+        author: 'GovCarol',
+        body: 'Design looks good. The diamond shape is distinctive.',
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true`);
+    commentIds.push(body.comment.id);
+  });
+
+  await test('Discussion has 3 comments', async () => {
+    const { body } = await json(`/governance/proposals/${baseProposalId}/discussion`);
+    assert(body.total === 3, `Expected 3 comments, got ${body.total}`);
+    assert(body.comments.length === 3, `Expected 3 comments in array, got ${body.comments.length}`);
+    // Should be in ASC order by creation
+    assert(body.comments[0].author === 'GovAlice', 'First comment by GovAlice');
+    assert(body.comments[1].author === 'GovBob', 'Second comment by GovBob');
+    assert(body.comments[2].author === 'GovCarol', 'Third comment by GovCarol');
+  });
+
+  await test('Summary endpoint returns full proposal context', async () => {
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/summary`);
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.proposal?.id === baseProposalId, 'Should include proposal');
+    assert(body.commentCount === 3, `Expected 3 comments, got ${body.commentCount}`);
+    assert(Array.isArray(body.governanceLog), 'Should include governance log');
+    assert(body.voteStatus?.canAccept === false, 'canAccept should be false (within vote window)');
+    assert(typeof body.voteStatus?.threshold === 'number', 'Should have vote threshold');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 8 — Deferred Voting + Amendment
+// ---------------------------------------------------------------------------
+
+async function scenario8() {
+  currentScenario = 'Deferred Voting + Amendment';
+  console.log('\n  ── Scenario 8: Deferred Voting + Amendment ──');
+
+  await test('GovBob endorses (deferred — within vote window)', async () => {
+    const { body } = await json('/knowledge/endorse', {
+      method: 'POST',
+      body: JSON.stringify({ proposalId: baseProposalId, agent: 'GovBob' }),
+    });
+    assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
+    assert(body.status === 'pending', `Expected still pending, got ${body.status}`);
+    assert(body.endorsers === 2, `Expected 2 endorsers, got ${body.endorsers}`);
+  });
+
+  let amendedProposalId = '';
+
+  await test('GovAlice amends proposal based on feedback', async () => {
+    const updatedDesign = [
+      [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+      [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+      [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
+      [0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0],
+      [0,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0],
+      [0,1,0,0,0,1,1,0,0,1,1,0,0,0,1,0],
+      [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
+      [0,1,0,0,0,1,0,0,0,0,1,0,0,0,1,0],
+      [0,1,0,0,0,1,1,0,0,1,1,0,0,0,1,0],
+      [0,0,1,0,0,1,1,1,1,1,1,0,0,1,0,0],
+      [0,0,1,1,0,0,1,1,1,1,0,0,1,1,0,0],
+      [0,0,0,1,1,0,0,1,1,0,0,1,1,0,0,0],
+      [0,0,0,0,1,1,0,0,0,0,1,1,0,0,0,0],
+      [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+      [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+    ];
+
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/amend`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Summarize',
+        description: 'Request content summarization or provide a summary. Updated with broader keywords.',
+        reason: 'Added keywords per GovBob feedback, thickened glyph borders',
+        keywords: ['summarize', 'summary', 'condense', 'tldr', 'recap', 'digest'],
+        domain: 'agent',
+        meaning: 'Summarize Content',
+        glyphDesign: updatedDesign,
+      }),
+    });
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
+    assert(body.original?.status === 'superseded', `Original should be superseded, got ${body.original?.status}`);
+    assert(body.amended?.status === 'pending', `Amended should be pending, got ${body.amended?.status}`);
+    amendedProposalId = body.amended.id;
+    console.log(`      Original ${baseProposalId} → superseded, new ${amendedProposalId}`);
+  });
+
+  await test('Original discussion includes supersession system comment', async () => {
+    const { body } = await json(`/governance/proposals/${baseProposalId}/discussion`);
+    // Should have 3 original comments + 1 system comment about supersession
+    assert(body.total >= 4, `Expected ≥4 comments (3 + system), got ${body.total}`);
+    const systemComment = body.comments.find((c: any) =>
+      c.body.toLowerCase().includes('superseded') || c.body.toLowerCase().includes('amended')
+    );
+    assert(systemComment != null, 'Should have system comment about supersession');
+  });
+
+  // Endorse the new proposal
+  const endorsers = ['GovBob', 'GovCarol', 'GovDave'];
+  for (let i = 0; i < endorsers.length; i++) {
+    const agent = endorsers[i];
+    await test(`${agent} endorses amended proposal (${i + 2}/${endorsers.length + 1})`, async () => {
+      const { body } = await json('/knowledge/endorse', {
+        method: 'POST',
+        body: JSON.stringify({ proposalId: amendedProposalId, agent }),
+      });
+      assert(body.success === true, `Expected success=true, got ${JSON.stringify(body)}`);
+      assert(body.endorsers === i + 2, `Expected ${i + 2} endorsers, got ${body.endorsers}`);
+      assert(body.status === 'pending', `Expected still pending (deferred), got ${body.status}`);
+    });
+  }
+
+  await test('Summary of amended proposal shows all endorsements', async () => {
+    const { body } = await json(`/governance/proposals/${amendedProposalId}/summary`);
+    assert(body.proposal?.id === amendedProposalId, 'Should return amended proposal');
+    assert(body.voteStatus?.endorsements === 4, `Expected 4 endorsements, got ${body.voteStatus?.endorsements}`);
+    assert(body.proposal?.glyphDesign != null, 'Amended proposal should have glyphDesign');
+    assert(body.voteStatus?.canAccept === false, 'canAccept still false (within vote window)');
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Scenario 9 — Governance Error Cases + Stats
+// ---------------------------------------------------------------------------
+
+async function scenario9() {
+  currentScenario = 'Governance Errors + Stats';
+  console.log('\n  ── Scenario 9: Governance Error Cases + Stats ──');
+
+  await test('GET /governance/stats shows comment count', async () => {
+    const { status, body } = await json('/governance/stats');
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(body.totalComments >= 3, `Expected ≥3 comments, got ${body.totalComments}`);
+    assert(typeof body.proposals === 'object', 'Should have proposals status counts');
+  });
+
+  await test('GET /agora/feed includes governance items', async () => {
+    const { body } = await json('/agora/feed?limit=100');
+    assert(Array.isArray(body.items), 'Should return items array');
+    const govItems = body.items.filter((i: any) =>
+      i.type === 'proposal' || i.type === 'endorsement' || i.type === 'discussion'
+    );
+    assert(govItems.length >= 1, `Expected ≥1 governance feed items, got ${govItems.length}`);
+  });
+
+  await test('Comment with empty body → 400', async () => {
+    const { status } = await json(`/governance/proposals/${baseProposalId}/comment`, {
+      method: 'POST',
+      body: JSON.stringify({ author: 'GovAlice', body: '' }),
+    });
+    assert(status === 400, `Expected 400, got ${status}`);
+  });
+
+  await test('Comment on non-existent proposal → 400', async () => {
+    const { status } = await json('/governance/proposals/ZZZZZ/comment', {
+      method: 'POST',
+      body: JSON.stringify({ author: 'GovAlice', body: 'hello' }),
+    });
+    assert(status === 400 || status === 404, `Expected 400 or 404, got ${status}`);
+  });
+
+  await test('Amend by non-proposer → 400', async () => {
+    // baseProposalId was proposed by GovAlice; GovBob cannot amend it
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/amend`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Hijack', description: 'Nope', reason: 'Testing',
+        keywords: ['test'], domain: 'agent', meaning: 'Test',
+      }),
+    });
+    // Superseded proposals can't be amended either, so we accept 400 for either reason
+    assert(status === 400, `Expected 400, got ${status}`);
+    assert(body.success === false, 'Should return success=false');
+  });
+
+  await test('Amend on superseded proposal → 400', async () => {
+    // baseProposalId is already superseded from scenario 8
+    const { status, body } = await json(`/governance/proposals/${baseProposalId}/amend`, {
+      method: 'POST',
+      body: JSON.stringify({
+        name: 'Summarize2', description: 'Trying again', reason: 'Testing',
+        keywords: ['test'], domain: 'agent', meaning: 'Test',
+      }),
+    });
+    assert(status === 400, `Expected 400, got ${status}`);
+    assert(body.success === false, 'Should return success=false');
+  });
+
+  await test('Discussion for non-existent proposal → 404', async () => {
+    const { status } = await json('/governance/proposals/ZZZZZ/discussion');
+    assert(status === 404, `Expected 404, got ${status}`);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -448,6 +819,10 @@ async function main() {
   await scenario3();
   await scenario4();
   await scenario5();
+  await scenario6();
+  await scenario7();
+  await scenario8();
+  await scenario9();
 
   // Summary
   const passed = results.filter(r => r.passed).length;

@@ -23,7 +23,7 @@ Add to your MCP config (Claude Desktop: `claude_desktop_config.json`, Claude Cod
       "args": ["-y", "tsx", "packages/mcp/server.ts"],
       "cwd": "/path/to/ayni-protocol",
       "env": {
-        "AYNI_SERVER_URL": "https://ayni.waweapps.win"
+        "AYNI_SERVER_URL": "https://ay-ni.org"
       }
     }
   }
@@ -32,7 +32,7 @@ Add to your MCP config (Claude Desktop: `claude_desktop_config.json`, Claude Cod
 
 Clone the repo first: `git clone https://github.com/SotoAlt/ayni-protocol.git`
 
-The public server at `https://ayni.waweapps.win` is live. No API key needed.
+The public server at `https://ay-ni.org` is live. No API key needed.
 
 ## The Agora
 

@@ -13,7 +13,7 @@
  *   Terminal 3: npx tsx packages/demo/twitter-demo.ts [server-url]
  *
  * For production:
- *   npx tsx packages/demo/twitter-demo.ts https://ayni.waweapps.win
+ *   npx tsx packages/demo/twitter-demo.ts https://ay-ni.org
  */
 
 const SERVER_URL = process.argv[2] || process.env.AYNI_SERVER_URL || 'http://localhost:3000';

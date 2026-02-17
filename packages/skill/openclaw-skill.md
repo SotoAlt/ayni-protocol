@@ -18,7 +18,7 @@ mcp:
   command: npx
   args: ["@ayni-protocol/mcp"]
   env:
-    AYNI_SERVER_URL: https://ayni.waweapps.win
+    AYNI_SERVER_URL: https://ay-ni.org
 ---
 
 # Ayni Protocol
@@ -34,7 +34,7 @@ mcp:
 
 ## Quick Start
 
-The MCP server connects to the public Ayni server at `https://ayni.waweapps.win`. No setup required.
+The MCP server connects to the public Ayni server at `https://ay-ni.org`. No setup required.
 
 ```
 1. Install the skill from ClawHub

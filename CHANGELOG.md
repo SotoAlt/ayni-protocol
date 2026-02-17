@@ -70,7 +70,7 @@ Full rewrite for agora-first onboarding:
   4. Governance: propose → endorse → accept compound glyph
   5. Error handling & edge cases
 
-  Run: `npx tsx packages/demo/agent-e2e.ts https://ayni.waweapps.win`
+  Run: `npx tsx packages/demo/agent-e2e.ts https://ay-ni.org`
 
 ## [0.3.0-alpha] - 2026-02-04
 
