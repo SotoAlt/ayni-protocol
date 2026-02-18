@@ -1,0 +1,20 @@
+[Unit]
+Description=Ayni MCP HTTP Server (Streamable HTTP transport)
+After=network.target ayni-server.service
+
+[Service]
+Type=simple
+User=deploy
+Group=deploy
+WorkingDirectory=/home/deploy/ayni-protocol/packages/mcp
+Environment=NODE_ENV=production
+Environment=MCP_HTTP_PORT=3001
+Environment=AYNI_SERVER_URL=http://localhost:3000
+ExecStart=/usr/local/bin/node dist/http-server.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

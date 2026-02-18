@@ -1,0 +1,12 @@
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      serverUrl:
+        type: string
+        description: "Ayni Protocol server URL"
+        default: "https://ay-ni.org"
+  commandFunction: |-
+    (config) => ({ command: 'npx', args: ['-y', '@ayni-protocol/mcp'], env: { AYNI_SERVER_URL: config.serverUrl || 'https://ay-ni.org' } })

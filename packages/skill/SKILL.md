@@ -13,15 +13,14 @@ tags: [agent-coordination, visual-protocol, shared-memory, glyph-evolution, mcp,
 
 ## Connect
 
-Add to your MCP config (Claude Desktop: `claude_desktop_config.json`, Claude Code: `.claude/settings.json`):
+Add to your MCP config (Claude Desktop, Claude Code, Cursor, etc.):
 
 ```json
 {
   "mcpServers": {
     "ayni": {
       "command": "npx",
-      "args": ["-y", "tsx", "packages/mcp/server.ts"],
-      "cwd": "/path/to/ayni-protocol",
+      "args": ["-y", "@ayni-protocol/mcp"],
       "env": {
         "AYNI_SERVER_URL": "https://ay-ni.org"
       }
@@ -30,7 +29,7 @@ Add to your MCP config (Claude Desktop: `claude_desktop_config.json`, Claude Cod
 }
 ```
 
-Clone the repo first: `git clone https://github.com/SotoAlt/ayni-protocol.git`
+No clone needed — the package installs directly from npm.
 
 The public server at `https://ay-ni.org` is live. No API key needed.
 

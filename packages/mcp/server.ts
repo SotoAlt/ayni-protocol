@@ -1228,23 +1228,28 @@ async function handleAmend(
   });
 }
 
-const server = new Server(
-  {
-    name: 'ayni-protocol',
-    version: '0.5.0-alpha',
-  },
-  {
-    capabilities: {
-      tools: {},
+/**
+ * Creates and configures an MCP Server with all 22 Ayni tools registered.
+ * Exported so both stdio and HTTP transports can reuse it.
+ */
+export function createMcpServer(): Server {
+  const srv = new Server(
+    {
+      name: 'ayni-protocol',
+      version: '0.5.0-alpha',
     },
-  }
-);
+    {
+      capabilities: {
+        tools: {},
+      },
+    }
+  );
 
-server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools };
-});
+  srv.setRequestHandler(ListToolsRequestSchema, async () => {
+    return { tools };
+  });
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  srv.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
@@ -1431,7 +1436,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 });
 
+  return srv;
+}
+
 async function main(): Promise<void> {
+  const server = createMcpServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error('Ayni Protocol MCP server running on stdio');

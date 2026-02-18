@@ -1,11 +1,12 @@
 {
   "name": "@ayni-protocol/mcp",
-  "version": "0.4.0-alpha",
+  "version": "0.5.0-alpha",
   "description": "MCP server for Ayni Protocol - visual coordination tools for AI agents",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
-    "ayni-mcp": "./dist/server.js"
+    "ayni-mcp": "./dist/server.js",
+    "ayni-mcp-http": "./dist/http-server.js"
   },
   "scripts": {
     "build": "tsc",
@@ -14,7 +15,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^0.6.0",
+    "@modelcontextprotocol/sdk": "^1.27.0",
     "viem": "^2.21.0"
   },
   "devDependencies": {
@@ -37,7 +38,17 @@
     "coordination",
     "ayni",
     "visual-protocol",
-    "model-context-protocol"
+    "model-context-protocol",
+    "crypto",
+    "defi",
+    "agent-to-agent",
+    "a2a",
+    "monad",
+    "blockchain",
+    "governance",
+    "x402",
+    "erc-8004",
+    "tocapu"
   ],
   "files": [
     "dist/**/*.js",
